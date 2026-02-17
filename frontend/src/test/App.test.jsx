@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
 import App from "../App";
 
 // Mock leaflet to avoid canvas errors in jsdom
@@ -51,27 +50,25 @@ vi.mock("leaflet", () => {
 vi.mock("leaflet.heat", () => ({}));
 
 describe("App", () => {
-  it("renders login page when not authenticated", () => {
+  it("renders login page when not authenticated", async () => {
+    localStorage.removeItem("token");
+    window.history.pushState({}, "", "/login");
+
     render(
-      <MemoryRouter initialEntries={["/login"]}>
-        <App />
-      </MemoryRouter>
+      <App />
     );
-    // The login page should show a form
-    expect(document.querySelector("form") || document.querySelector("input")).toBeTruthy();
+
+    expect(await screen.findByRole("button", { name: /ingresar/i })).toBeInTheDocument();
   });
 
-  it("redirects to login when accessing protected route", () => {
-    // Clear any stored tokens
+  it("redirects to login when accessing protected route", async () => {
     localStorage.removeItem("token");
-    
+    window.history.pushState({}, "", "/");
+
     render(
-      <MemoryRouter initialEntries={["/"]}>
-        <App />
-      </MemoryRouter>
+      <App />
     );
-    
-    // Should not show dashboard content without auth
-    expect(screen.queryByText("Control Central")).toBeNull();
+
+    expect(await screen.findByRole("button", { name: /ingresar/i })).toBeInTheDocument();
   });
 });

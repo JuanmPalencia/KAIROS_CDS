@@ -26,29 +26,25 @@ describe("Login Page", () => {
 
   it("renders username and password fields", () => {
     renderLogin();
-    expect(screen.getByPlaceholderText(/usuario/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/contraseña/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/usuario/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
   });
 
   it("renders the login button", () => {
     renderLogin();
-    const btn = screen.getByRole("button", { name: /iniciar sesión|entrar|login/i });
+    const btn = screen.getByRole("button", { name: /ingresar/i });
     expect(btn).toBeInTheDocument();
   });
 
   it("toggles password visibility", () => {
     renderLogin();
-    const passwordInput = screen.getByPlaceholderText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/contraseña/i);
     expect(passwordInput.type).toBe("password");
 
-    // Find the toggle button
-    const toggleBtn = screen.getByRole("button", { name: /mostrar|ocultar|👁️|🙈/i }) 
-      || document.querySelector(".password-toggle");
-    
-    if (toggleBtn) {
-      fireEvent.click(toggleBtn);
-      expect(passwordInput.type).toBe("text");
-    }
+    const toggleBtn = document.querySelector(".password-toggle");
+    expect(toggleBtn).toBeTruthy();
+    fireEvent.click(toggleBtn);
+    expect(passwordInput.type).toBe("text");
   });
 
   it("shows error on failed login", async () => {
@@ -59,17 +55,18 @@ describe("Login Page", () => {
     });
 
     renderLogin();
-    const usernameInput = screen.getByPlaceholderText(/usuario/i);
-    const passwordInput = screen.getByPlaceholderText(/contraseña/i);
-    const submitBtn = screen.getByRole("button", { name: /iniciar sesión|entrar|login/i });
+    const usernameInput = screen.getByLabelText(/usuario/i);
+    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const submitBtn = screen.getByRole("button", { name: /ingresar/i });
 
     fireEvent.change(usernameInput, { target: { value: "wrong" } });
     fireEvent.change(passwordInput, { target: { value: "wrong" } });
     fireEvent.click(submitBtn);
 
-    // Should call fetch
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalled();
     });
+
+    expect(screen.getByText(/usuario o contraseña incorrectos/i)).toBeInTheDocument();
   });
 });
