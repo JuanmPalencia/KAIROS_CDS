@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: KAIROS_CDS/backend
+        working-directory: backend
 
     services:
       postgres:
@@ -107,5 +107,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: KAIROS_CDS/frontend/dist/
+          path: frontend/dist/
           retention-days: 14
