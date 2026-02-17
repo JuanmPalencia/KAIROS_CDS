@@ -6,7 +6,7 @@ import { AuthProvider } from "../context/AuthContext";
 
 // Mock fetch globally
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 function renderLogin() {
   return render(

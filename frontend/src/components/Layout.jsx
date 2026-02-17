@@ -59,6 +59,53 @@ const NavClock = memo(function NavClock() {
   );
 });
 
+function DropdownMenu({
+  name,
+  icon,
+  label,
+  items,
+  openDropdown,
+  openMenu,
+  closeMenu,
+  isInGroup,
+  isActive,
+  setOpenDropdown,
+}) {
+  if (items.length === 0) return null;
+  const paths = items.map((i) => i.to);
+  const active = isInGroup(paths);
+  return (
+    <div
+      className={`nav-dropdown ${openDropdown === name ? "open" : ""}`}
+      onMouseEnter={() => openMenu(name)}
+      onMouseLeave={closeMenu}
+    >
+      <button
+        className={`nav-link nav-dropdown-trigger ${active ? "active" : ""}`}
+        onMouseEnter={() => openMenu(name)}
+        aria-expanded={openDropdown === name}
+        aria-haspopup="true"
+      >
+        <span className="icon-3d" aria-hidden="true">{icon}</span> {label} <ChevronDown size={13} className="chevron" aria-hidden="true" />
+      </button>
+      {openDropdown === name && (
+        <div className="nav-dropdown-menu">
+          {items.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`dropdown-item ${isActive(item.to) ? "active" : ""}`}
+              onClick={() => setOpenDropdown(null)}
+            >
+              {item.icon} {item.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -137,42 +184,6 @@ export default function Layout({ children }) {
     canAccess.patients  && { to: "/patient-tracking",  icon: <UserCheck size={16} />,   label: "Pacientes" },
   ].filter(Boolean);
 
-  const DropdownMenu = ({ name, icon, label, items }) => {
-    if (items.length === 0) return null;
-    const paths = items.map(i => i.to);
-    const active = isInGroup(paths);
-    return (
-      <div
-        className={`nav-dropdown ${openDropdown === name ? "open" : ""}`}
-        onMouseEnter={() => openMenu(name)}
-        onMouseLeave={closeMenu}
-      >
-        <button
-          className={`nav-link nav-dropdown-trigger ${active ? "active" : ""}`}
-          onMouseEnter={() => openMenu(name)}
-          aria-expanded={openDropdown === name}
-          aria-haspopup="true"
-        >
-          <span className="icon-3d" aria-hidden="true">{icon}</span> {label} <ChevronDown size={13} className="chevron" aria-hidden="true" />
-        </button>
-        {openDropdown === name && (
-          <div className="nav-dropdown-menu">
-            {items.map(item => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`dropdown-item ${isActive(item.to) ? "active" : ""}`}
-                onClick={() => setOpenDropdown(null)}
-              >
-                {item.icon} {item.label}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="layout">
       {/* Skip to content link for keyboard users */}
@@ -200,13 +211,46 @@ export default function Layout({ children }) {
           </Link>
 
           {operacionesItems.length > 0 && (
-            <DropdownMenu name="ops" icon={<Radio size={18} />} label="Operaciones" items={operacionesItems} />
+            <DropdownMenu
+              name="ops"
+              icon={<Radio size={18} />}
+              label="Operaciones"
+              items={operacionesItems}
+              openDropdown={openDropdown}
+              openMenu={openMenu}
+              closeMenu={closeMenu}
+              isInGroup={isInGroup}
+              isActive={isActive}
+              setOpenDropdown={setOpenDropdown}
+            />
           )}
 
-          <DropdownMenu name="analytics" icon={<Activity size={18} />} label="Análisis" items={analisisItems} />
+          <DropdownMenu
+            name="analytics"
+            icon={<Activity size={18} />}
+            label="Análisis"
+            items={analisisItems}
+            openDropdown={openDropdown}
+            openMenu={openMenu}
+            closeMenu={closeMenu}
+            isInGroup={isInGroup}
+            isActive={isActive}
+            setOpenDropdown={setOpenDropdown}
+          />
 
           {clinicoItems.length > 0 && (
-            <DropdownMenu name="clinico" icon={<HeartPulse size={18} />} label="Clínico" items={clinicoItems} />
+            <DropdownMenu
+              name="clinico"
+              icon={<HeartPulse size={18} />}
+              label="Clínico"
+              items={clinicoItems}
+              openDropdown={openDropdown}
+              openMenu={openMenu}
+              closeMenu={closeMenu}
+              isInGroup={isInGroup}
+              isActive={isActive}
+              setOpenDropdown={setOpenDropdown}
+            />
           )}
 
           {canAccess.audit && (

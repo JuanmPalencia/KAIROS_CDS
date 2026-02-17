@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { MessageCircle, Send, X, Hash, ChevronDown, Users } from "lucide-react";
 import "./ChatWidget.css";
 import { API_BASE } from "../config";
@@ -26,13 +26,13 @@ export default function ChatWidget() {
     try { return JSON.parse(atob(token.split(".")[1])).sub; } catch { return "operator"; }
   })();
 
-  const hdrs = () => ({
+  const hdrs = useCallback(() => ({
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
-  });
+  }), [token]);
 
   // Fetch messages
-  const fetchMessages = async (ch = channel) => {
+  const fetchMessages = useCallback(async (ch = channel) => {
     try {
       const url = `${API}/api/chat/messages?channel=${ch}`;
       const res = await fetch(url, { headers: hdrs() });
@@ -50,21 +50,31 @@ export default function ChatWidget() {
     } catch {
       /* ignore */
     }
-  };
+  }, [channel, open, hdrs]);
 
   useEffect(() => {
     if (!token) return;
-    fetchMessages();
-    const iv = setInterval(() => fetchMessages(), POLL_MS);
-    return () => clearInterval(iv);
-  }, [channel, token]);
+    const runFetch = () => {
+      void fetchMessages();
+    };
+    const init = setTimeout(runFetch, 0);
+    const iv = setInterval(runFetch, POLL_MS);
+    return () => {
+      clearTimeout(init);
+      clearInterval(iv);
+    };
+  }, [fetchMessages, token]);
 
   useEffect(() => {
     if (open) {
-      setUnread(0);
       scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
     }
   }, [open, messages]);
+
+  const handleOpenChat = () => {
+    setOpen(true);
+    setUnread(0);
+  };
 
   const sendMessage = async () => {
     const t = text.trim();
@@ -111,7 +121,7 @@ export default function ChatWidget() {
     <div className="chat-widget-wrapper">
       {/* Floating toggle button */}
       {!open && (
-        <button className="chat-fab" onClick={() => setOpen(true)} title="Chat interno">
+        <button className="chat-fab" onClick={handleOpenChat} title="Chat interno">
           <MessageCircle size={22} />
           {unread > 0 && <span className="chat-fab-badge">{unread > 9 ? "9+" : unread}</span>}
         </button>

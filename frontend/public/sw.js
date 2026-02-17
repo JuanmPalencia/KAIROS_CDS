@@ -1,5 +1,3 @@
-/* eslint-disable no-restricted-globals */
-
 const CACHE_NAME = "kairos-cds-v1";
 const PRECACHE_URLS = ["/", "/index.html"];
 

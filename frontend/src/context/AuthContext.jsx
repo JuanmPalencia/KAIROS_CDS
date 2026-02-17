@@ -40,7 +40,10 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
   const tokenRef = useRef(token);
-  tokenRef.current = token;
+
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
 
   /* ── Forced logout ── */
   const logout = useCallback(() => {
@@ -57,8 +60,17 @@ export const AuthProvider = ({ children }) => {
 
   /* ── Validate token on mount / token change ── */
   useEffect(() => {
-    if (!token) { setLoading(false); return; }
-    if (isTokenExpired(token)) { logout(); setLoading(false); return; }
+    if (!token) {
+      const id = setTimeout(() => setLoading(false), 0);
+      return () => clearTimeout(id);
+    }
+    if (isTokenExpired(token)) {
+      const id = setTimeout(() => {
+        logout();
+        setLoading(false);
+      }, 0);
+      return () => clearTimeout(id);
+    }
 
     fetch(`${API}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -128,4 +140,5 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

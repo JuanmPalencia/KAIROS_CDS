@@ -1,5 +1,5 @@
 // frontend/src/pages/AIInsights.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Brain, BarChart3, Flame, MapPin, AlertTriangle, Wrench, MessageCircle, Ambulance, User, Bot, TrendingUp, Sparkles, CheckCircle, Hospital, Pencil } from 'lucide-react';
 import { API_BASE as API_BASE_URL } from '../config';
@@ -26,17 +26,7 @@ const AIInsights = () => {
   
   const API_BASE = API_BASE_URL + '/api';
   
-  useEffect(() => {
-    if (activeTab === 'dashboard') {
-      loadDashboard();
-    } else if (activeTab === 'chat') {
-      // Chat ya se carga cuando se envía mensaje
-    } else if (activeTab === 'profile') {
-      loadProfile();
-    }
-  }, [activeTab, token]);
-  
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE}/ai/insights/dashboard`, {
@@ -53,7 +43,7 @@ const AIInsights = () => {
       console.error('Error loading AI dashboard:', error);
     }
     setLoading(false);
-  };
+  }, [API_BASE, token]);
   
   const loadAnomalies = async () => {
     try {
@@ -126,7 +116,7 @@ const AIInsights = () => {
     setLoading(false);
   };
   
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE}/ai/recommendations/profile`, {
@@ -141,7 +131,20 @@ const AIInsights = () => {
       console.error('Error loading profile:', error);
     }
     setLoading(false);
-  };
+  }, [API_BASE, token]);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      if (activeTab === 'dashboard') {
+        void loadDashboard();
+      } else if (activeTab === 'chat') {
+        // Chat ya se carga cuando se envía mensaje
+      } else if (activeTab === 'profile') {
+        void loadProfile();
+      }
+    }, 0);
+    return () => clearTimeout(id);
+  }, [activeTab, loadDashboard, loadProfile]);
   
   const renderDashboard = () => (
     <div className="ai-dashboard">
