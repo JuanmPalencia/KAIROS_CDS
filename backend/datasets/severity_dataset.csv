@@ -129,3 +129,5 @@ Persona un poco mareada en el trabajo quiere que venga ambulancia,OTHER,1,LOW,TR
 Niño con varicela fiebre baja y malestar general,OTHER,1,LOW,PEDIATRIC,20
 Persona con contractura cervical tras dormir mal mucho dolor al girar,TRAUMA,1,LOW,TRAUMA,20
 Herida superficial en pie por pisar cristal sangrado mínimo,TRAUMA,1,LOW,TRAUMA,20
+Test incident,CARDIO,1,MEDIUM,,
+Test cardiac incident,CARDIO,2,MEDIUM,,

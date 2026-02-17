@@ -8,6 +8,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { statusLabel } from "../utils/statusLabels";
+import logoKairos from "../assets/logo_kairos.png";
 import "../styles/DriverMobile.css";
 import { API_BASE } from "../config";
 
@@ -145,7 +146,7 @@ export default function DriverMobile() {
       {/* Standalone mobile header */}
       <div className="driver-topbar">
         <div className="driver-brand">
-          <Truck size={22} />
+          <img src={logoKairos} alt="KAIROS" className="driver-brand-logo" />
           <span className="driver-brand-name">KAIROS</span>
         </div>
         <div className="driver-live-badge">

@@ -59,9 +59,35 @@
   margin-bottom: 0.5rem;
 }
 
+.login-logo-img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 12px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
 .logo-icon {
   font-size: 3rem;
   animation: pulse 2s ease-in-out infinite;
+}
+
+.login-partner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  color: #999;
+  font-size: 0.8rem;
+}
+
+.login-gtp-logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 6px;
+  opacity: 0.8;
 }
 
 @keyframes pulse {

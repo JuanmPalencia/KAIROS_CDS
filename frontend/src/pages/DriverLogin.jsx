@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Truck, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
+import logoKairos from "../assets/logo_kairos.png";
+import logoGtp from "../assets/logo_gtp.jpeg";
 import "../styles/DriverMobile.css";
 
 export default function DriverLogin() {
@@ -36,9 +38,10 @@ export default function DriverLogin() {
     <div className="driver-page driver-login-page">
       <div className="driver-login-container">
         <div className="driver-login-logo">
-          <Truck size={48} strokeWidth={1.5} />
+          <img src={logoKairos} alt="KAIROS" className="driver-login-logo-img" />
           <h1>KAIROS</h1>
           <p>App Conductor</p>
+          <img src={logoGtp} alt="GTP" className="driver-login-gtp" />
         </div>
 
         <form onSubmit={handleSubmit} className="driver-login-form">

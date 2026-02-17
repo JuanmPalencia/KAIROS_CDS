@@ -53,7 +53,8 @@ KAIROS CDS (Clinical Decision Support) es un sistema de gemelo digital en tiempo
 | Capacidad | Descripción |
 |---|---|
 | **Gemelo Digital** | Motor asíncrono que simula el movimiento de vehículos en tiempo real sobre rutas reales OSRM |
-| **IA Integrada** | 10 módulos: clasificación de severidad, predicción de demanda, ETA, anomalías, mantenimiento predictivo, visión, chat, tráfico, recomendaciones, asignación óptima |
+| **IA Integrada** | 10 módulos 100% locales (sklearn): clasificación de severidad, predicción de demanda, ETA, anomalías, mantenimiento predictivo, visión, chat, tráfico, recomendaciones, asignación óptima. Sin dependencias externas (OpenAI, etc.) |
+| **Anonimización RGPD** | Pipeline automático de anonimización (supresión + generalización + perturbación) con reentrenamiento continuo de modelos |
 | **Blockchain BSV** | Notarización de auditoría con árboles Merkle y difusión on-chain |
 | **Ciberseguridad** | Rate limiting, brute-force detection, input scanning, CSRF, gestión de sesiones, firewall de IPs |
 | **Monitorización** | Prometheus + Alertmanager con 6 métricas y 4 reglas de alerta |
@@ -63,7 +64,7 @@ KAIROS CDS (Clinical Decision Support) es un sistema de gemelo digital en tiempo
 
 | Métrica | Valor |
 |---|---|
-| Endpoints API REST | 131 |
+| Endpoints API REST | 133 |
 | Endpoint WebSocket | 1 |
 | Routers API | 21 |
 | Páginas frontend | 15 |
@@ -72,7 +73,7 @@ KAIROS CDS (Clinical Decision Support) es un sistema de gemelo digital en tiempo
 | Módulos de IA | 10 |
 | Módulos blockchain | 7 |
 | Archivos CSS | 18 |
-| Dependencias Python | 27 |
+| Dependencias Python | 26 (sin openai) |
 | Dependencias npm | 24 (13 prod + 11 dev) |
 | Servicios Docker | 6 (db, redis, backend, frontend, prometheus, alertmanager) |
 | Tests automatizados | 13 suites (11 backend + 2 frontend), 72+ tests |
@@ -206,7 +207,7 @@ Auditoría registrada → Merkle batch → BSV blockchain
 | scikit-learn | latest | Machine Learning (RF, GB, IF) |
 | pandas + numpy | latest | Procesamiento de datos |
 | joblib | latest | Serialización de modelos ML |
-| openai | latest | GPT-4/4V para IA conversacional y visión |
+| openai | — | Eliminado: todos los modelos son locales (sklearn) |
 | httpx | latest | Cliente HTTP asíncrono |
 | prometheus-client | latest | Métricas Prometheus |
 | redis + hiredis | latest | Cache y pub/sub |
@@ -340,7 +341,7 @@ services:
 | CPU | 2 cores | 4+ cores |
 | RAM | 4 GB | 8+ GB |
 | Disco | 10 GB | 20+ GB (SSD) |
-| Red | Conexión a internet para OSRM y OpenAI | — |
+| Red | Conexión a internet para OSRM (opcional) | — |
 
 ---
 
@@ -711,29 +712,36 @@ Fallback: si OSRM no está disponible, se genera una ruta sintética interpoland
 
 | # | Módulo | Archivo | Algoritmo | Entrenamiento |
 |---|---|---|---|---|
-| 1 | Clasificación de severidad | `ai_severity_classifier.py` | NLP + GPT-4 | No requiere |
+| 1 | Clasificación de severidad | `ai_severity_classifier.py` | TF-IDF + RandomForest | `python train_all_models.py` |
 | 2 | Predicción de demanda | `ai_demand_prediction.py` | Random Forest | `POST /api/ai/demand/train` |
 | 3 | Predicción de ETA | `ai_eta_predictor.py` | Gradient Boosting | `POST /api/ai/eta/train` |
 | 4 | Detección de anomalías | `ai_anomaly_detector.py` | Isolation Forest + reglas | `POST /api/ai/anomalies/train` |
 | 5 | Mantenimiento predictivo | `ai_maintenance_predictor.py` | Reglas heurísticas | No requiere |
-| 6 | Visión por computador | `ai_vision_analyzer.py` | GPT-4 Vision | No requiere |
-| 7 | Asistente conversacional | `ai_conversational_assistant.py` | GPT-4 Chat | No requiere |
+| 6 | Visión por computador | `ai_vision_analyzer.py` | Pillow + TF-IDF + SVM | `python train_all_models.py` |
+| 7 | Asistente conversacional | `ai_conversational_assistant.py` | TF-IDF + LogisticRegression | `python train_all_models.py` |
 | 8 | Integración de tráfico | `ai_traffic_integration.py` | Reglas + hora del día | No requiere |
 | 9 | Recomendaciones | `ai_recommendation_system.py` | Perfil de operador | Automático |
 | 10 | Asignación inteligente | `ai_assignment.py` | Multi-criteria scoring | No requiere |
+
+> 🔒 **100% local**: Ningún módulo requiere API keys externas. Todos los modelos se entrenan y ejecutan localmente con scikit-learn.
+> 🔄 **Aprendizaje continuo**: Los datos operativos se anonimizan automáticamente (RGPD) y alimentan los datasets de reentrenamiento.
 
 ## 9.2 Detalle de cada módulo
 
 ### 9.2.1 Clasificación de severidad
 
 **Entrada:** Texto descriptivo del incidente.  
-**Salida:** Nivel de severidad 1–5 + justificación.  
-**Algoritmo:** NLP basado en keywords con fallback a GPT-4.  
+**Salida:** Nivel de severidad 1–5 + justificación + confianza.  
+**Algoritmo:** TF-IDF + RandomForestClassifier (200 estimadores).  
+**Modelo:** `models/severity_classifier.joblib`  
+**Dataset:** `datasets/severity_dataset.csv` (130+ muestras, 4 clases)  
 
 Proceso:
-1. Analiza keywords como "cardiac arrest", "unconscious", "bleeding" → mapeo a severidad.
-2. Si GPT-4 está disponible, envía el texto para clasificación contextual.
-3. Retorna: `{severity: 4, confidence: 0.92, reasoning: "Parada cardíaca detectada"}`
+1. Construye texto de features: `"{descripción} TIPO:{tipo} AFECTADOS:{n}"`.
+2. Vectoriza con TF-IDF (bi-gramas, max 5000 features).
+3. Clasifica con Random Forest → probabilidades por clase.
+4. Retorna: `{severity: 4, confidence: 0.92, reasoning: "..."}`
+5. Fallback: reglas heurísticas si el modelo no está entrenado.
 
 ### 9.2.2 Predicción de demanda (hotspots)
 
@@ -775,9 +783,18 @@ Multiplicadores: tráfico (0.8×–2.0×), lluvia (1.2×), noche (0.9×).
 
 ### 9.2.6 Visión por computador
 
-**Entrada:** Imagen (base64) de la escena de emergencia.  
+**Entrada:** Imagen (bytes) de la escena de emergencia.  
 **Salida:** Análisis de la escena + evaluación de seguridad.  
-**Algoritmo:** GPT-4 Vision.
+**Algoritmo:** Pillow (extracción de features visuales) + TF-IDF + LinearSVC (clasificación de escena).  
+**Modelo:** `models/vision_scene_model.joblib`  
+**Dataset:** `datasets/vision_scenes_dataset.csv` (56 muestras, 7 tipos de escena)  
+
+Features visuales extraídas con Pillow:
+- Brillo medio, ratio rojo/azul/oscuridad
+- Varianza de píxeles (indicador de caos visual)
+- Resolución de imagen
+
+7 tipos de escena: TRAFFIC_ACCIDENT, FIRE_SCENE, MEDICAL_EMERGENCY, STRUCTURAL_COLLAPSE, FLOOD_SCENE, HAZMAT_SCENE, SAFE_SCENE.
 
 Dos modos:
 - `analyze-incident`: Identifica tipo de incidente, severidad visible, número de víctimas.
@@ -785,10 +802,18 @@ Dos modos:
 
 ### 9.2.7 Asistente conversacional
 
-**Motor:** GPT-4 con contexto operativo.  
+**Motor:** TF-IDF + LogisticRegression (clasificador de intents).  
+**Modelo:** `models/chat_intent_model.joblib`  
+**Dataset:** `datasets/chat_intents_dataset.csv` (145+ muestras, 7 intents)  
+
+**Funcionamiento:**
+1. Clasifica el intent del mensaje del usuario (fleet_status, incidents_summary, hospital_capacity, create_incident, analytics, hotspots, greeting, help).
+2. Genera respuesta templateática adaptada al intent detectado.
+3. Extrae coordenadas de mensajes cuando se detecta intent `create_incident`.
+4. Retorna: `{response, intent, confidence, suggested_actions}`
+
 **Funcionalidades:**
 - Responde preguntas sobre el estado operativo actual.
-- Consulta datos en tiempo real (vehículos, incidentes, KPIs).
 - Proporciona recomendaciones basadas en el contexto.
 - Historial de chat persistente por sesión.
 
@@ -826,7 +851,7 @@ Niveles de tráfico:
 - Capacidad disponible (20%)
 - Nivel de emergencia (10%)
 
-## 9.3 Endpoints de IA (20 endpoints)
+## 9.3 Endpoints de IA (22 endpoints)
 
 | Método | Endpoint | Descripción |
 |---|---|---|
@@ -850,6 +875,85 @@ Niveles de tráfico:
 | `GET` | `/api/ai/traffic/route` | Ruta optimizada por tráfico |
 | `GET` | `/api/ai/recommendations/personalized/{i}` | Recomendaciones por incidente |
 | `GET` | `/api/ai/recommendations/profile` | Perfil del operador |
+| `GET` | `/api/ai/datasets/stats` | Estadísticas de datasets de reentrenamiento |
+| `POST` | `/api/ai/retrain` | Re-entrenar todos los modelos IA |
+
+## 9.4 Entrenamiento de modelos
+
+### Script unificado
+
+```bash
+cd backend
+python train_all_models.py
+```
+
+Entrena **6 modelos** en secuencia:
+
+| Modelo | Algoritmo | Dataset | Output |
+|---|---|---|---|
+| Severity Classifier | TF-IDF + RandomForest (200 est.) | `datasets/severity_dataset.csv` | `models/severity_classifier.joblib` |
+| Chat Intent | TF-IDF + LogisticRegression (C=5) | `datasets/chat_intents_dataset.csv` | `models/chat_intent_model.joblib` |
+| Vision Scene | TF-IDF + LinearSVC | `datasets/vision_scenes_dataset.csv` | `models/vision_scene_model.joblib` |
+| Demand Predictor | RandomForestRegressor (150 est.) | Sintético (800 muestras Madrid) | `models/demand_predictor.joblib` |
+| ETA Predictor | GradientBoostingRegressor (200 est.) | Sintético (500 muestras) | `models/eta_predictor.joblib` |
+| Anomaly Detector | IsolationForest (150 est.) | Sintético (vehículos + incidentes) | `models/anomaly_detector.joblib` |
+
+### Re-entrenamiento vía API
+
+```bash
+curl -X POST http://localhost:5001/api/ai/retrain \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+## 9.5 Anonimización y Aprendizaje Continuo (RGPD/LOPD-GDD)
+
+### 9.5.1 Pipeline de datos
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌───────────────┐    ┌──────────────┐
+│ Dato operativo  │───►│  Anonimizador    │───►│ Dataset CSV   │───►│ Reentrenar   │
+│ (incidente,     │    │  (RGPD)          │    │ (append       │    │ modelos      │
+│  chat, imagen)  │    │                  │    │  thread-safe) │    │              │
+└─────────────────┘    └──────────────────┘    └───────────────┘    └──────────────┘
+```
+
+### 9.5.2 Capas de anonimización
+
+| Capa | Técnica | Campos afectados | Ejemplo |
+|---|---|---|---|
+| **Supresión** | Eliminación total | nombre, DNI, teléfono, email, IP, user_agent | `patient_name` → eliminado |
+| **Generalización** | Reducción de precisión | coordenadas, edad, dirección, fechas | `lat 40.4168` → `40.42`; `edad 42` → `ADULTO_30-44` |
+| **Perturbación** | Ruido gaussiano ±5% | constantes vitales | `FC 80` → `78`; `TAS 120` → `122` |
+| **Scrubbing** | 18 patrones regex | texto libre (descripciones, notas) | `"paciente Juan Pérez, DNI 12345678A"` → `"[NOMBRE_ANON], [DNI_ANON]"` |
+
+### 9.5.3 Patrones PII detectados
+
+| Patrón | Regex | Reemplazo |
+|---|---|---|
+| DNI español | `\b[0-9]{8}[A-Za-z]\b` | `[DNI_ANON]` |
+| NIE extranjero | `\b[XYZ][0-9]{7}[A-Za-z]\b` | `[NIE_ANON]` |
+| Teléfono español | `(?:\+34)?[679]\d{2}.\d{3}.\d{3}` | `[TEL_ANON]` |
+| Email | `\b[...]+@[...]+\.[...]+\b` | `[EMAIL_ANON]` |
+| Nombres propios | `(?:paciente\|sr\|sra\|don\|doña)\s+[A-Z]...` | `[NOMBRE_ANON]` |
+| Direcciones | `(?:Calle\|Avenida\|Plaza)\s+...` | `[DIR_ANON]` |
+| Matrículas | `\b\d{4}\s?[A-Z]{3}\b` | `[MATR_ANON]` |
+| NSS | `\b\d{2}/?\d{8,10}/?\d{2}\b` | `[NSS_ANON]` |
+| Tarjeta sanitaria | `\b[A-Z]{4}\d{10,14}\b` | `[CIP_ANON]` |
+
+### 9.5.4 Archivos
+
+| Archivo | Función |
+|---|---|
+| `app/core/anonymizer.py` | Motor de anonimización RGPD (220 líneas) |
+| `app/core/data_collector.py` | Recolector thread-safe con append a CSV |
+
+### 9.5.5 Puntos de integración
+
+| Evento | Endpoint | Dataset destino |
+|---|---|---|
+| Creación de incidente | `POST /events/incidents` | `severity_dataset.csv` |
+| Mensaje de chat | `POST /api/ai/chat` | `chat_intents_dataset.csv` (si confianza ≥ 0.7) |
+| Análisis de imagen | `POST /api/ai/vision/analyze-incident` | `vision_scenes_dataset.csv` |
 
 ---
 
@@ -1086,7 +1190,7 @@ frontend/src/
 
 ### AI Insights (`/ai-insights`) — ADMIN, OPERATOR
 - Dashboard de IA: hotspots, anomalías, mantenimiento, severidad
-- Chat conversacional con GPT-4
+- Chat conversacional con intent classifier local
 - Historial de chat persistente por sesión
 - Entrenamiento de modelos desde la interfaz
 
@@ -1234,7 +1338,7 @@ OPEN ──► ASSIGNED ──► EN_ROUTE ──► ARRIVED ──► RESOLVED 
 | OPEN | Incidente reportado, sin asignar | Amarillo (#f59e0b) |
 | ASSIGNED | Vehículo y hospital asignados | Azul (#3b82f6) |
 | EN_ROUTE | Vehículo en camino | Cyan (#0ea5e9) |
-| ON_SCENE | Vehículo en escena | Amarillo |
+| ON_SCENE | Vehículo en la escena | Amarillo |
 | RESOLVED | Paciente entregado, vehículo liberado | Verde (#10b981) |
 | CLOSED | Caso cerrado administrativamente | Gris (#6b7280) |
 | CANCELLED | Incidente cancelado | Gris |
@@ -1856,7 +1960,7 @@ npm test
 | `SECRET_KEY` | Random 64 bytes | Clave de firma JWT |
 | `ALGORITHM` | `HS256` | Algoritmo JWT |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | Expiración JWT (minutos) |
-| `OPENAI_API_KEY` | `""` | API key de OpenAI (opcional) |
+| `OPENAI_API_KEY` | — | Eliminado: todos los modelos IA son locales |
 | `BSV_PRIVATE_KEY` | `""` | Clave privada BSV (opcional) |
 | `BSV_NETWORK` | `main` | Red BSV: main/test |
 | `ARC_URL` | `https://arc.gorillapool.io` | URL del nodo ARC BSV |
@@ -2051,7 +2155,7 @@ requests
 pytest
 pytest-asyncio
 faker
-openai
+# openai  ← Eliminado: 100% modelos locales
 scikit-learn
 pandas
 numpy
@@ -2174,7 +2278,7 @@ KAIROS_CDS/
 │   │   │   ├── integrity.py
 │   │   │   ├── merkle.py
 │   │   │   └── notarizer.py
-│   │   ├── core/                       # 17 módulos core
+│   │   ├── core/                       # 19 módulos core
 │   │   │   ├── ai_anomaly_detector.py
 │   │   │   ├── ai_assignment.py
 │   │   │   ├── ai_conversational_assistant.py
@@ -2185,6 +2289,8 @@ KAIROS_CDS/
 │   │   │   ├── ai_severity_classifier.py
 │   │   │   ├── ai_traffic_integration.py
 │   │   │   ├── ai_vision_analyzer.py
+│   │   │   ├── anonymizer.py           # RGPD data anonymization
+│   │   │   ├── data_collector.py       # Anon. data collection for retraining
 │   │   │   ├── cybersecurity.py
 │   │   │   ├── incident_generator.py
 │   │   │   ├── metrics.py
@@ -2356,3 +2462,13 @@ KAIROS_CDS/
 
 **KAIROS CDS v1.0.0** — Digital Twin for Emergency Fleet Management  
 *Febrero 2026 — HPE GreenLake Cloud Platform*
+
+---
+
+> **NOTA CI/CD:**
+> - El archivo de dependencias del backend es `backend/app/requirements.txt`.
+> - El archivo de dependencias del frontend es `frontend/package-lock.json`.
+> - En GitHub Actions, los paths en `.github/workflows/ci.yml` deben ser relativos al working-directory de cada job:
+>   - Backend: `app/requirements.txt` (working-directory: `backend`)
+>   - Frontend: `package-lock.json` (working-directory: `frontend`)
+> - Si ves errores de "unable to cache dependencies" o "No file matched to requirements.txt", revisa los paths en el workflow.

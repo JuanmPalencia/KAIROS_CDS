@@ -2,7 +2,7 @@
 
 > **v1.0.0** · Gemelo Digital de gestión de flotas de emergencia con IA, blockchain, ciberseguridad y monitorización en tiempo real.
 
-[![CI](https://github.com/kairos-cds/kairos/actions/workflows/ci.yml/badge.svg)](https://github.com/kairos-cds/kairos/actions)
+[![CI](https://github.com/JuanmPalencia/KAIROS_CDS/actions/workflows/ci.yml/badge.svg)](https://github.com/JuanmPalencia/KAIROS_CDS/actions)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 ![React 19](https://img.shields.io/badge/react-19-61dafb)
 ![FastAPI](https://img.shields.io/badge/fastapi-0.115-009688)
@@ -53,7 +53,7 @@
 │  + Recharts    │   TwinEngine         │  Redis 7                     │
 │  + lucide-react│   (asyncio loop)     │  Prometheus + Alertmanager   │
 │                │                      │  BSV Blockchain              │
-│  12 páginas    │   118 endpoints      │  OSRM Routing                │
+│  12 páginas    │   118 endpoints      │                              │
 │  Dark mode     │   10 módulos IA      │                              │
 │  City filter   │   WebSocket /ws/live │                              │
 └────────────────┴──────────────────────┴──────────────────────────────┘
@@ -626,6 +626,14 @@ BSV_NETWORK=mainnet
 - **Seed**: `POST /api/auth/init-admin` crea los 4 usuarios demo automáticamente
 
 ---
+
+> **NOTA CI/CD:**
+> - El archivo de dependencias del backend es `backend/app/requirements.txt`.
+> - El archivo de dependencias del frontend es `frontend/package-lock.json`.
+> - Si usas GitHub Actions, asegúrate de que los paths en `.github/workflows/ci.yml` sean relativos al working-directory de cada job:
+>   - Backend: `app/requirements.txt` (working-directory: `backend`)
+>   - Frontend: `package-lock.json` (working-directory: `frontend`)
+> - Si ves errores de "unable to cache dependencies" o "No file matched to requirements.txt", revisa los paths en el workflow.
 
 ---
 

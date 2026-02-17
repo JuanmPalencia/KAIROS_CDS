@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Ambulance } from "lucide-react";
+import logoKairos from "../assets/logo_kairos.png";
+import logoGtp from "../assets/logo_gtp.jpeg";
 import "../styles/Login.css";
 
 export default function Login() {
@@ -34,10 +35,14 @@ export default function Login() {
       <div className="login-box">
         <div className="login-header">
           <div className="login-logo">
-            <span className="logo-icon icon-3d"><Ambulance size={48} strokeWidth={2} /></span>
+            <img src={logoKairos} alt="KAIROS" className="login-logo-img" />
             <h1>KAIROS</h1>
           </div>
           <p className="login-subtitle">Sistema de Gestión de Emergencias</p>
+          <div className="login-partner">
+            <span>by</span>
+            <img src={logoGtp} alt="GTP" className="login-gtp-logo" />
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">

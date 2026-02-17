@@ -1,8 +1,9 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect, useRef, memo } from "react";
+import logoKairos from "../assets/logo_kairos.png";
+import logoGtp from "../assets/logo_gtp.jpeg";
 import {
-  Ambulance,
   LayoutDashboard,
   ClipboardList,
   AlertTriangle,
@@ -178,8 +179,10 @@ export default function Layout({ children }) {
       <a href="#main-content" className="skip-link">Saltar al contenido</a>
       <nav className="navbar" role="navigation" aria-label="Navegación principal">
         <div className="nav-brand">
-          <span className="brand-icon icon-3d" aria-hidden="true"><Ambulance size={28} strokeWidth={2.2} /></span>
+          <img src={logoKairos} alt="KAIROS" className="brand-logo" />
           <span className="brand-name">KAIROS</span>
+          <span className="brand-separator">|</span>
+          <img src={logoGtp} alt="GTP" className="brand-logo-gtp" />
         </div>
 
         <div className="nav-links">
