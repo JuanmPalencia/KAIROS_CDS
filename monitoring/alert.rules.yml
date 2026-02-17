@@ -1,0 +1,53 @@
+groups:
+  - name: kairos_alerts
+    interval: 30s
+    rules:
+      # 1. API Down
+      - alert: APIDown
+        expr: up{job="kairos-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "KAIROS API is down"
+          description: "The KAIROS backend API has been down for more than 1 minute."
+
+      # 2. High Response Time
+      - alert: HighResponseTime
+        expr: http_request_duration_seconds{quantile="0.95"} > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API response time"
+          description: "95th percentile response time is above 2 seconds for 5 minutes."
+
+      # 3. Database Connection Issues
+      - alert: DatabaseDown
+        expr: database_connections_active < 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection lost"
+          description: "No active database connections detected for 2 minutes."
+
+      # 4. High Incident Volume
+      - alert: HighIncidentVolume
+        expr: rate(incidents_created_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High incident creation rate"
+          description: "More than 10 incidents per minute created in the last 5 minutes."
+
+      # 5. Low Resource Availability
+      - alert: LowResourceAvailability
+        expr: available_vehicles_count < 2
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low vehicle availability"
+          description: "Less than 2 vehicles available for 3 minutes."

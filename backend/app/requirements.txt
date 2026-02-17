@@ -1,0 +1,43 @@
+fastapi==0.115.6
+uvicorn[standard]==0.30.6
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+pydantic==2.10.3
+pydantic[email]==2.10.3
+python-dotenv==1.0.1
+
+# Auth & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
+python-multipart==0.0.9
+
+# Redis
+redis==5.2.1
+hiredis==3.0.0
+
+# PostGIS
+geoalchemy2==0.15.2
+
+# Monitoring
+prometheus-client==0.21.0
+prometheus-fastapi-instrumentator==7.0.0
+
+# HTTP Client
+httpx==0.28.1
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+faker==33.1.0
+
+# AI & Machine Learning (100% local — no API keys needed)
+scikit-learn==1.4.0
+pandas==2.2.0
+numpy==1.26.3
+joblib==1.3.2
+Pillow>=10.2.0
+
+# BSV Blockchain (audit notarization)
+bsv-sdk>=1.0.0
+requests>=2.31.0

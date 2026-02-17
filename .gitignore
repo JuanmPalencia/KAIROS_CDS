@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+*.db
+test.db
+htmlcov/
+.coverage
+coverage.xml
+*.egg-info/
+build/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Monitoring data
+monitoring/prometheus_data/
+monitoring/alertmanager_data/
+
+# Blockchain local ledger
+backend/data/
+
+# ML models (large binary)
+backend/models/*.joblib

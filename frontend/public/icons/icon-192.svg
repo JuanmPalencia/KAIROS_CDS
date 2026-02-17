@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="32" fill="#1e293b"/>
+  <text x="96" y="72" text-anchor="middle" font-family="Arial,sans-serif" font-size="72" font-weight="bold" fill="#3b82f6">K</text>
+  <text x="96" y="140" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="600" fill="#60a5fa">CDS</text>
+  <circle cx="156" cy="36" r="18" fill="#ef4444"/>
+  <path d="M148 36 l4 4 12-12" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

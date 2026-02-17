@@ -1,0 +1,146 @@
+intent,text
+fleet_status,cuántas ambulancias hay disponibles
+fleet_status,estado de la flota
+fleet_status,cuántos vehículos tenemos
+fleet_status,ambulancias disponibles
+fleet_status,show me the fleet status
+fleet_status,how many ambulances are available
+fleet_status,qué ambulancias están libres
+fleet_status,vehículos operativos ahora
+fleet_status,cuántas unidades activas hay
+fleet_status,estado actual de los vehículos
+fleet_status,muéstrame la flota
+fleet_status,resumen de ambulancias
+fleet_status,cuántas ambulancias en servicio
+fleet_status,hay ambulancias cerca del centro
+fleet_status,flota zona norte
+fleet_status,ambulancias disponibles en la zona sur
+fleet_status,cuántas SVA hay en servicio
+fleet_status,estado de las SVB
+fleet_status,listar vehículos disponibles
+fleet_status,dame el estado de la flota completa
+incidents_summary,cuántos incidentes hay abiertos
+incidents_summary,incidentes activos
+incidents_summary,resumen de emergencias
+incidents_summary,cuántas emergencias hay ahora
+incidents_summary,incidentes críticos abiertos
+incidents_summary,listar incidentes pendientes
+incidents_summary,hay incidentes sin asignar
+incidents_summary,emergencias activas en este momento
+incidents_summary,estadísticas de incidentes
+incidents_summary,cuántos casos tenemos abiertos
+incidents_summary,incidentes de hoy
+incidents_summary,resumen de incidentes por severidad
+incidents_summary,cuáles son los incidentes más urgentes
+incidents_summary,hay algún incidente crítico
+incidents_summary,incidentes de severidad alta
+incidents_summary,cuántos casos sin resolver
+incidents_summary,show me open incidents
+incidents_summary,how many emergencies are active
+incidents_summary,list pending incidents
+incidents_summary,give me incident statistics
+hospital_capacity,capacidad de hospitales
+hospital_capacity,qué hospital tiene camas libres
+hospital_capacity,hospitales disponibles
+hospital_capacity,hospital con menor carga
+hospital_capacity,capacidad hospitalaria actual
+hospital_capacity,a qué hospital puedo enviar un paciente
+hospital_capacity,hospitales saturados
+hospital_capacity,disponibilidad de camas
+hospital_capacity,hospital más cercano con capacidad
+hospital_capacity,cuál hospital tiene capacidad de cardiología
+hospital_capacity,hospitales con especialidad de trauma
+hospital_capacity,hospital con UCI disponible
+hospital_capacity,carga hospitalaria actual
+hospital_capacity,a dónde envío un paciente de trauma
+hospital_capacity,check hospital capacity
+hospital_capacity,which hospital has free beds
+hospital_capacity,hospital availability
+hospital_capacity,hospital closest with capacity
+hospital_capacity,qué hospitales están llenos
+hospital_capacity,nivel de ocupación hospitalaria
+create_incident,crear incidente cardíaco en Gran Vía
+create_incident,nueva emergencia accidente de tráfico
+create_incident,registrar incidente en coordenadas 40.41 -3.70
+create_incident,crear emergencia quemaduras en calle Alcalá
+create_incident,nuevo accidente de moto en la M30
+create_incident,abrir incidente respiratorio en Sol
+create_incident,crear caso de trauma en el Retiro
+create_incident,registrar emergencia obstétrica en Chamberí
+create_incident,nuevo incidente parada cardíaca en Vallecas
+create_incident,crear emergencia por intoxicación
+create_incident,create new cardiac incident
+create_incident,register traffic accident
+create_incident,open new emergency
+create_incident,reportar emergencia médica
+create_incident,hay una persona herida en la calle Mayor
+create_incident,persona inconsciente en Plaza España necesita ambulancia
+create_incident,quiero reportar un accidente
+create_incident,necesito crear un nuevo incidente
+create_incident,registrar nuevo caso de emergencia
+create_incident,abrir caso nuevo de trauma por caída
+analytics,estadísticas del sistema
+analytics,métricas de rendimiento
+analytics,dashboard de analytics
+analytics,tiempo medio de respuesta
+analytics,rendimiento de hoy
+analytics,analytics de la semana
+analytics,cuál es el tiempo de respuesta promedio
+analytics,métricas del mes
+analytics,cuántos incidentes se resolvieron hoy
+analytics,tasa de resolución
+analytics,KPIs actuales
+analytics,show me the analytics
+analytics,performance metrics
+analytics,compliance con tiempos SAMUR
+analytics,evolución de incidentes esta semana
+analytics,resumen de métricas operativas
+analytics,cuánto tardamos en responder de media
+analytics,estadísticas de productividad
+analytics,indicadores de calidad
+analytics,cómo vamos este mes
+hotspots,predecir zonas calientes
+hotspots,dónde habrá más demanda
+hotspots,hotspots de incidentes
+hotspots,predicción de demanda
+hotspots,zonas con más probabilidad de emergencias
+hotspots,predict demand hotspots
+hotspots,dónde debo posicionar ambulancias
+hotspots,forecast de emergencias
+hotspots,dónde se esperan más incidentes
+hotspots,predicción de zonas calientes para las próximas horas
+hotspots,análisis predictivo de demanda
+hotspots,qué zonas tendrán más emergencias esta noche
+hotspots,optimizar posicionamiento de ambulancias
+hotspots,zonas de alta demanda previstas
+hotspots,mapa de calor predictivo
+hotspots,qué zonas necesitan más cobertura
+hotspots,dónde habrá más actividad mañana
+hotspots,predict where emergencies will happen
+hotspots,demand forecast next hours
+hotspots,sugerir redistribución de flota
+greeting,hola
+greeting,buenos días
+greeting,buenas tardes
+greeting,qué tal
+greeting,hey kairos
+greeting,hello
+greeting,hi
+greeting,good morning
+greeting,buenas
+greeting,necesito ayuda
+greeting,puedes ayudarme
+greeting,qué puedes hacer
+greeting,help
+greeting,ayuda
+greeting,cómo funciona esto
+help,qué funcionalidades tienes
+help,qué puedo preguntarte
+help,cuáles son tus capacidades
+help,dime qué sabes hacer
+help,menú de opciones
+help,what can you do
+help,show me your capabilities
+help,qué comandos aceptas
+help,cómo te uso
+help,lista de comandos disponibles

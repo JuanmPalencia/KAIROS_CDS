@@ -1,0 +1,131 @@
+description,incident_type,affected_count,severity,specialties,response_time
+Persona inconsciente en la calle no respira tiene los labios morados,CARDIAC_ARREST,1,CRITICAL,CARDIO,3
+Hombre de 60 años con paro cardíaco súbito en restaurante,CARDIAC_ARREST,1,CRITICAL,CARDIO,3
+Mujer de 45 años colapsó en el metro sin pulso,CARDIAC_ARREST,1,CRITICAL,CARDIO,3
+Paciente con fibrilación ventricular en domicilio,CARDIAC_ARREST,1,CRITICAL,CARDIO,3
+Anciano de 80 años sin signos vitales encontrado en el suelo,CARDIAC_ARREST,1,CRITICAL,CARDIO,3
+Deportista de 25 años cayó desplomado en campo de fútbol sin pulso,CARDIAC_ARREST,1,CRITICAL,CARDIO,3
+Persona ahogándose en piscina sacada del agua inconsciente,DROWNING,1,CRITICAL,RESPIRATORY,3
+Niño de 4 años encontrado flotando en piscina sin respirar,DROWNING,1,CRITICAL,RESPIRATORY;PEDIATRIC,3
+Buceador inconsciente rescatado del mar con parada respiratoria,DROWNING,1,CRITICAL,RESPIRATORY,3
+Hombre arrastrado por corriente río inconsciente al sacarlo,DROWNING,1,CRITICAL,RESPIRATORY;TRAUMA,3
+Hemorragia severa por herida de arma blanca en abdomen,SEVERE_BLEEDING,1,CRITICAL,TRAUMA,3
+Herida abierta con hemorragia arterial en pierna sangrado profuso,SEVERE_BLEEDING,1,CRITICAL,TRAUMA,3
+Amputación traumática de mano con sangrado masivo,SEVERE_BLEEDING,1,CRITICAL,TRAUMA,3
+Mujer apuñalada en el torso con hemorragia incontrolable,SEVERE_BLEEDING,1,CRITICAL,TRAUMA,3
+Caída de altura 5 metros con hemorragia en la cabeza inconsciente,FALL,1,CRITICAL,TRAUMA;NEURO,3
+Accidente de moto a alta velocidad conductor proyectado inconsciente,TRAFFIC_ACCIDENT,1,CRITICAL,TRAUMA;NEURO,5
+Colisión frontal de dos vehículos a alta velocidad múltiples heridos atrapados,TRAFFIC_ACCIDENT,4,CRITICAL,TRAUMA,3
+Atropello de peatón por camión víctima inconsciente en el suelo,TRAFFIC_ACCIDENT,1,CRITICAL,TRAUMA;NEURO,3
+Accidente de autobús con volcamiento múltiples pasajeros heridos,TRAFFIC_ACCIDENT,15,CRITICAL,TRAUMA,3
+Choque múltiple en autopista con varios vehículos incendiados,TRAFFIC_ACCIDENT,6,CRITICAL,TRAUMA;BURNS,3
+Persona con convulsiones continuas no cesa en 5 minutos,STROKE,1,CRITICAL,NEURO,5
+ACV hemorrágico paciente con hemiplejia súbita y vómitos,STROKE,1,CRITICAL,NEURO,3
+Quemaduras de tercer grado en el 60% del cuerpo por explosión,BURNS,1,CRITICAL,BURNS,3
+Incendio en edificio con personas atrapadas múltiples quemados,BURNS,5,CRITICAL,BURNS;RESPIRATORY,3
+Explosión de gas en vivienda persona con quemaduras graves en cara y torso,BURNS,1,CRITICAL,BURNS;RESPIRATORY,3
+Intoxicación por monóxido de carbono familia entera inconsciente,POISONING,4,CRITICAL,POISONING;RESPIRATORY,3
+Ingestión masiva de medicamentos intento de suicidio inconsciente,POISONING,1,CRITICAL,POISONING;PSYCHIATRIC,3
+Niño de 2 años ingirió producto de limpieza convulsionando,POISONING,1,CRITICAL,POISONING;PEDIATRIC,3
+Parto con hemorragia severa y bebé en presentación podálica,OBSTETRIC,2,CRITICAL,OBSTETRIC,3
+Eclampsia en embarazada de 38 semanas con convulsiones,OBSTETRIC,2,CRITICAL,OBSTETRIC,3
+Accidente de tráfico colisión lateral conductor con dolor de pecho atrapado,TRAFFIC_ACCIDENT,1,HIGH,TRAUMA;CARDIO,5
+Motociclista caído con fractura abierta de tibia,TRAFFIC_ACCIDENT,1,HIGH,TRAUMA,8
+Ciclista atropellado con traumatismo craneal consciente pero desorientado,TRAFFIC_ACCIDENT,1,HIGH,TRAUMA;NEURO,5
+Accidente de coche con dos heridos uno con posible fractura de columna,TRAFFIC_ACCIDENT,2,HIGH,TRAUMA;NEURO,5
+Colisión entre coche y moto heridos con fracturas múltiples,TRAFFIC_ACCIDENT,2,HIGH,TRAUMA,8
+Paciente con dolor intenso en el pecho irradiado al brazo izquierdo sudoración,CARDIAC_ARREST,1,HIGH,CARDIO,5
+Mujer de 55 años con opresión torácica intensa y dificultad para respirar,RESPIRATORY,1,HIGH,CARDIO;RESPIRATORY,5
+Hombre de 70 años con arritmia severa palpitaciones intensas mareo,CARDIAC_ARREST,1,HIGH,CARDIO,5
+Persona con dificultad respiratoria severa labios cianóticos,RESPIRATORY,1,HIGH,RESPIRATORY,5
+Ataque de asma severo paciente apenas puede hablar por la disnea,RESPIRATORY,1,HIGH,RESPIRATORY,5
+Niño de 3 años con crisis asmática severa uso de músculos accesorios,RESPIRATORY,1,HIGH,RESPIRATORY;PEDIATRIC,5
+Fractura de fémur tras caída de escalera dolor intenso deformidad visible,FALL,1,HIGH,TRAUMA,8
+Caída de andamio 3 metros con dolor lumbar no puede mover las piernas,FALL,1,HIGH,TRAUMA;NEURO,5
+Persona con quemaduras de segundo grado en brazos y cara,BURNS,1,HIGH,BURNS,8
+Trabajador con quemadura química en ojos y manos por ácido,BURNS,1,HIGH,BURNS,5
+Posible ACV mujer con adormecimiento facial y dificultad para hablar,STROKE,1,HIGH,NEURO,5
+Hombre con pérdida súbita de visión en un ojo posible isquemia,STROKE,1,HIGH,NEURO,5
+Reacción alérgica severa por picadura de abeja hinchazón de garganta,ALLERGIC_REACTION,1,HIGH,RESPIRATORY,5
+Anafilaxia por alergia alimentaria dificultad para respirar urticaria generalizada,ALLERGIC_REACTION,1,HIGH,RESPIRATORY,5
+Mujer en trabajo de parto avanzado con contracciones cada 2 minutos,OBSTETRIC,1,HIGH,OBSTETRIC,8
+Embarazada de 32 semanas con sangrado vaginal abundante,OBSTETRIC,1,HIGH,OBSTETRIC,5
+Herida por arma blanca en brazo sangrado controlable paciente consciente,TRAUMA,1,HIGH,TRAUMA,8
+Persona apuñalada en muslo sangrado moderado consciente y orientada,TRAUMA,1,HIGH,TRAUMA,8
+Caída de bicicleta con posible fractura de clavícula y costillas,TRAUMA,1,HIGH,TRAUMA,8
+Intoxicación medicamentosa paciente somnoliento pero responde a estímulos,POISONING,1,HIGH,POISONING,8
+Ingestión de setas tóxicas vómitos intensos y dolor abdominal,POISONING,1,HIGH,POISONING,8
+Accidente de tráfico menor golpe por alcance pasajero con dolor cervical,TRAFFIC_ACCIDENT,1,MEDIUM,TRAUMA,15
+Colisión leve en aparcamiento conductor con cinturón dolor leve cuello,TRAFFIC_ACCIDENT,1,MEDIUM,TRAUMA,15
+Motociclista caído a baja velocidad con rozaduras y dolor en muñeca,TRAFFIC_ACCIDENT,1,MEDIUM,TRAUMA,15
+Dolor abdominal agudo mujer de 30 años posible apendicitis,OTHER,1,MEDIUM,TRAUMA,15
+Hombre con dolor abdominal fuerte náuseas y fiebre alta,OTHER,1,MEDIUM,TRAUMA,15
+Persona con fiebre alta 40 grados escalofríos y confusión leve,OTHER,1,MEDIUM,TRAUMA,15
+Anciano con caída en domicilio dolor en cadera puede mover la pierna,FALL,1,MEDIUM,TRAUMA,15
+Mujer se cayó en la ducha golpe en la cabeza consciente pequeño corte,FALL,1,MEDIUM,TRAUMA,15
+Niño con brazo hinchado tras caída en parque posible fractura sin deformidad,FALL,1,MEDIUM,TRAUMA;PEDIATRIC,15
+Crisis de ansiedad con sensación de ahogo y taquicardia,PSYCHIATRIC,1,MEDIUM,PSYCHIATRIC,15
+Persona con ataque de pánico hiperventilando y temblando,PSYCHIATRIC,1,MEDIUM,PSYCHIATRIC;RESPIRATORY,15
+Diabético con hipoglucemia sudoración y confusión leve,OTHER,1,MEDIUM,CARDIO,15
+Persona con corte profundo en mano por cuchillo de cocina sangrado controlado,TRAUMA,1,MEDIUM,TRAUMA,15
+Quemadura de primer grado en antebrazo por aceite caliente,BURNS,1,MEDIUM,BURNS,15
+Mujer de 35 semanas con contracciones esporádicas sin sangrado,OBSTETRIC,1,MEDIUM,OBSTETRIC,15
+Reacción alérgica leve urticaria sin dificultad respiratoria,ALLERGIC_REACTION,1,MEDIUM,TRAUMA,15
+Picadura de escorpión dolor local hinchazón sin síntomas sistémicos,POISONING,1,MEDIUM,POISONING,15
+Persona con mareo intenso y vómitos no puede mantenerse en pie,OTHER,1,MEDIUM,NEURO,15
+Hombre con migraña intensa fotofobia y vómitos,OTHER,1,MEDIUM,NEURO,15
+Esguince de tobillo tras tropiezo no puede apoyar el pie inflamación,TRAUMA,1,LOW,TRAUMA,20
+Dolor de espalda crónico reagudizado tras esfuerzo puede caminar,TRAUMA,1,LOW,TRAUMA,20
+Persona con corte superficial en dedo sangrado leve,TRAUMA,1,LOW,TRAUMA,20
+Dolor de garganta intenso con fiebre de 38 grados,OTHER,1,LOW,TRAUMA,20
+Niño con dolor de oído temperatura 37.5 irritable,OTHER,1,LOW,PEDIATRIC,20
+Persona con picadura de mosquito inflamada y con mucho picor,OTHER,1,LOW,TRAUMA,20
+Dolor dental intenso inflamación en la mandíbula sin fiebre,OTHER,1,LOW,TRAUMA,20
+Mujer con infección urinaria dolor al orinar sin fiebre,OTHER,1,LOW,TRAUMA,20
+Persona con gastroenteritis leve diarrea y náuseas sin deshidratación,OTHER,1,LOW,TRAUMA,20
+Hombre con lumbalgia crónica dolor moderado puede moverse,OTHER,1,LOW,TRAUMA,20
+Contusión en rodilla por golpe contra mesa hinchazón leve,TRAUMA,1,LOW,TRAUMA,20
+Pequeña herida en ceja por golpe con puerta sangrado mínimo,TRAUMA,1,LOW,TRAUMA,20
+Persona resfrío común congestión nasal y malestar general,OTHER,1,LOW,TRAUMA,20
+Crisis de ansiedad leve sensación de nerviosismo y manos temblorosas,PSYCHIATRIC,1,LOW,PSYCHIATRIC,20
+Persona mayor con mareo leve al levantarse recupera rápido,OTHER,1,LOW,TRAUMA,20
+Mordedura de perro en pantorrilla herida superficial sin sangrado profuso,TRAUMA,1,LOW,TRAUMA,20
+Quemadura solar extensa con enrojecimiento y dolor,BURNS,1,LOW,BURNS,20
+Persona con vértigo posicional episodio breve,OTHER,1,LOW,NEURO,20
+Indigestión por comida copiosa dolor estómago leve náuseas,OTHER,1,LOW,TRAUMA,20
+Torcedura de muñeca al caer de bicicleta movilidad conservada,TRAUMA,1,LOW,TRAUMA,20
+Accidente múltiple en carretera 3 coches involucrados varios heridos leves,TRAFFIC_ACCIDENT,5,HIGH,TRAUMA,8
+Derrumbe parcial de edificio personas atrapadas se escuchan gritos,OTHER,8,CRITICAL,TRAUMA,3
+Incendio en colegio evacuación en curso varios niños con inhalación de humo,BURNS,12,CRITICAL,RESPIRATORY;PEDIATRIC;BURNS,3
+Explosión en fábrica múltiples trabajadores heridos estructura inestable,OTHER,10,CRITICAL,TRAUMA;BURNS,3
+Accidente de autobús escolar 20 niños heridos de diversa gravedad,TRAFFIC_ACCIDENT,20,CRITICAL,TRAUMA;PEDIATRIC,3
+Fuga de gas tóxico en zona industrial vecinos con irritación respiratoria,POISONING,15,CRITICAL,POISONING;RESPIRATORY,3
+Atropello masivo en zona peatonal vehículo arrolla a multitud,TRAFFIC_ACCIDENT,8,CRITICAL,TRAUMA,3
+Naufragio de embarcación 6 personas en el agua algunas inconscientes,DROWNING,6,CRITICAL,RESPIRATORY;TRAUMA,3
+Tiroteo en centro comercial múltiples heridos de bala,SEVERE_BLEEDING,5,CRITICAL,TRAUMA,3
+Accidente en parque de atracciones atracción colapsó varios niños heridos,TRAUMA,7,CRITICAL,TRAUMA;PEDIATRIC,3
+Incendio forestal bombero con quemaduras e inhalación de humo,BURNS,1,HIGH,BURNS;RESPIRATORY,5
+Trabajador atrapado bajo maquinaria pesada consciente con dolor,TRAUMA,1,HIGH,TRAUMA,5
+Electrocución en obra trabajador inconsciente con quemaduras en manos,BURNS,1,CRITICAL,BURNS;CARDIO,3
+Caída de trabajador desde tejado 4 metros dolor espalda no siente piernas,FALL,1,CRITICAL,TRAUMA;NEURO,3
+Bebé de 6 meses con fiebre alta 41 grados convulsión febril,OTHER,1,HIGH,PEDIATRIC,5
+Niño de 8 años atragantado con comida no puede respirar cara azul,RESPIRATORY,1,CRITICAL,RESPIRATORY;PEDIATRIC,3
+Anciana de 90 años caída con fractura de cadera dolor intenso,FALL,1,HIGH,TRAUMA,8
+Persona con sobredosis de heroína encontrada inconsciente con jeringuilla,POISONING,1,CRITICAL,POISONING,3
+Deportista con golpe de calor temperatura 42 grados confusión,OTHER,1,HIGH,TRAUMA,5
+Diabético en coma hipoglucémico no responde a estímulos,OTHER,1,CRITICAL,CARDIO,3
+Persona con shock anafiláctico por medicamento cara hinchada no puede respirar,ALLERGIC_REACTION,1,CRITICAL,RESPIRATORY,3
+Hombre de 50 con dolor torácico opresivo desde hace 30 minutos sudoración,CARDIAC_ARREST,1,HIGH,CARDIO,5
+Mujer embarazada de 39 semanas con rotura de aguas y sangrado,OBSTETRIC,2,HIGH,OBSTETRIC,5
+Adolescente autolesiones cortes en brazos sangrado moderado estado ansioso,PSYCHIATRIC,1,HIGH,PSYCHIATRIC;TRAUMA,8
+Paciente psiquiátrico agitado agresivo ha roto cristales heridas en manos,PSYCHIATRIC,1,MEDIUM,PSYCHIATRIC;TRAUMA,15
+Persona con dolor de pecho leve probablemente muscular sin factores de riesgo,OTHER,1,LOW,CARDIO,20
+Caída en escalera mecánica contusión en rodilla puede caminar,FALL,1,LOW,TRAUMA,20
+Persona con resfriado solicita ambulancia para ir a urgencias,OTHER,1,LOW,TRAUMA,20
+Hombre con tos persistente desde hace una semana sin fiebre,OTHER,1,LOW,RESPIRATORY,20
+Persona con insolación leve dolor de cabeza y enrojecimiento,OTHER,1,LOW,TRAUMA,20
+Mujer con dolor menstrual intenso náuseas sin sangrado anormal,OTHER,1,LOW,OBSTETRIC,20
+Persona un poco mareada en el trabajo quiere que venga ambulancia,OTHER,1,LOW,TRAUMA,20
+Niño con varicela fiebre baja y malestar general,OTHER,1,LOW,PEDIATRIC,20
+Persona con contractura cervical tras dormir mal mucho dolor al girar,TRAUMA,1,LOW,TRAUMA,20
+Herida superficial en pie por pisar cristal sangrado mínimo,TRAUMA,1,LOW,TRAUMA,20

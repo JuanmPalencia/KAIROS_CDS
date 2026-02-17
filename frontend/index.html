@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KAIROS CDS — Emergency Fleet Digital Twin</title>
+    <meta name="description" content="Sistema de Gemelo Digital para gestión de flotas de emergencia con IA, blockchain y monitorización en tiempo real" />
+    <meta name="theme-color" content="#3b82f6" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="KAIROS CDS — Emergency Fleet Digital Twin" />
+    <meta property="og:description" content="Gemelo Digital con IA, blockchain y tiempo real para flotas de emergencia" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icons/icon-512.svg" />
+    <meta property="og:locale" content="es_ES" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="KAIROS CDS — Emergency Fleet Digital Twin" />
+    <meta name="twitter:description" content="Gemelo Digital con IA, blockchain y tiempo real para flotas de emergencia" />
+
+    <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+    <link rel="manifest" href="/manifest.json" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>

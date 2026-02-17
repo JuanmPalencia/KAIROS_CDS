@@ -1,0 +1,57 @@
+label,description
+TRAFFIC_ACCIDENT,Escena de accidente de tráfico con vehículos dañados y posibles heridos
+TRAFFIC_ACCIDENT,Colisión entre dos coches en intersección con airbags desplegados
+TRAFFIC_ACCIDENT,Motocicleta volcada en carretera con conductor en el suelo
+TRAFFIC_ACCIDENT,Accidente en autopista con varios vehículos involucrados
+TRAFFIC_ACCIDENT,Coche empotrado contra farola con daños frontales severos
+TRAFFIC_ACCIDENT,Atropello de peatón en paso de cebra coche detenido
+TRAFFIC_ACCIDENT,Camión volcado en rotonda carga derramada en la vía
+TRAFFIC_ACCIDENT,Colisión por alcance en autopista tres vehículos implicados
+FIRE_SCENE,Incendio en edificio residencial llamas visibles en ventanas
+FIRE_SCENE,Casa en llamas con humo negro denso saliendo del tejado
+FIRE_SCENE,Incendio forestal con llamas altas y humo denso
+FIRE_SCENE,Vehículo en llamas tras accidente fuego intenso
+FIRE_SCENE,Incendio en nave industrial llamas de gran altura
+FIRE_SCENE,Contenedor de basura ardiendo junto a fachada de edificio
+FIRE_SCENE,Humo saliendo de ventana de piso en edificio alto
+FIRE_SCENE,Incendio en cocina de restaurante llamas en extractor
+MEDICAL_EMERGENCY,Persona tendida en el suelo con personas alrededor prestando ayuda
+MEDICAL_EMERGENCY,Paciente en camilla siendo atendido por paramédicos
+MEDICAL_EMERGENCY,Persona inconsciente en banco de parque
+MEDICAL_EMERGENCY,Anciano caído en la acera con posible fractura
+MEDICAL_EMERGENCY,Persona sentada en el suelo con malestar recibiendo oxígeno
+MEDICAL_EMERGENCY,Deportista desplomado en pista de atletismo
+MEDICAL_EMERGENCY,Persona con herida visible en brazo siendo vendada
+MEDICAL_EMERGENCY,Paciente en silla de ruedas con dificultad respiratoria
+STRUCTURAL_COLLAPSE,Edificio parcialmente derrumbado con escombros en la calle
+STRUCTURAL_COLLAPSE,Andamio colapsado con materiales en el suelo
+STRUCTURAL_COLLAPSE,Techo hundido en interior de nave industrial
+STRUCTURAL_COLLAPSE,Muro caído bloqueando la vía con ladrillos esparcidos
+STRUCTURAL_COLLAPSE,Estructura metálica deformada tras colapso
+STRUCTURAL_COLLAPSE,Balcón desprendido de fachada con cascotes en acera
+STRUCTURAL_COLLAPSE,Socavón en calzada con vehículo parcialmente hundido
+STRUCTURAL_COLLAPSE,Grúa caída sobre edificio en construcción
+FLOOD_SCENE,Calle inundada con agua llegando a las ventanas de los coches
+FLOOD_SCENE,Río desbordado con casas parcialmente sumergidas
+FLOOD_SCENE,Parking subterráneo inundado con vehículos bajo agua
+FLOOD_SCENE,Carretera cortada por agua torrentes cruzando la calzada
+FLOOD_SCENE,Personas sobre techos de coches rodeados de agua
+FLOOD_SCENE,Paso subterráneo inundado completamente
+FLOOD_SCENE,Zona residencial con agua en calles por lluvia torrencial
+FLOOD_SCENE,Bajos comerciales inundados con agua y barro
+HAZMAT_SCENE,Derrame de sustancia química con líquido de color en suelo
+HAZMAT_SCENE,Camión cisterna volcado con fuga de producto peligroso
+HAZMAT_SCENE,Zona acordonada por presencia de sustancia tóxica
+HAZMAT_SCENE,Nube de gas visible en zona industrial
+HAZMAT_SCENE,Bidones de producto químico caídos con derrame
+HAZMAT_SCENE,Fuga de gas en calle con olor detectado por vecinos
+HAZMAT_SCENE,Material peligroso derramado en carretera equipo HAZMAT presente
+HAZMAT_SCENE,Contenedores de sustancias peligrosas dañados en almacén
+SAFE_SCENE,Calle normal con tráfico fluido sin incidentes visibles
+SAFE_SCENE,Parque con personas paseando entorno tranquilo
+SAFE_SCENE,Zona residencial tranquila sin elementos de peligro
+SAFE_SCENE,Oficina con ambiente normal sin emergencias
+SAFE_SCENE,Aparcamiento vacío sin daños ni peligros
+SAFE_SCENE,Acera limpia y despejada sin obstáculos
+SAFE_SCENE,Interior de vivienda ordenado sin señales de emergencia
+SAFE_SCENE,Zona peatonal con comercios abiertos ambiente normal
