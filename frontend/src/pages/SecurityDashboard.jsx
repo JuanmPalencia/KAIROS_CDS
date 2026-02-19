@@ -68,9 +68,8 @@ export default function SecurityDashboard() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("overview");
 
-  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-
   const fetchAll = useCallback(async () => {
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
     try {
       const [dRes, eRes, sRes, bRes, lRes] = await Promise.all([
         fetch(`${API}/api/security/dashboard`, { headers }),
@@ -90,6 +89,8 @@ export default function SecurityDashboard() {
       setLoading(false);
     }
   }, [token, sevFilter]);
+
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
   useEffect(() => { fetchAll(); const t = setInterval(fetchAll, 15000); return () => clearInterval(t); }, [fetchAll]);
 

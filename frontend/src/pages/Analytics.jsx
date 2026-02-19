@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   LineChart,
   Line,
@@ -116,17 +116,7 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(7);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [period]);
-
-  useEffect(() => {
-    const onCityChange = () => fetchAnalytics();
-    window.addEventListener("cityFilterChanged", onCityChange);
-    return () => window.removeEventListener("cityFilterChanged", onCityChange);
-  }, [period]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       const cityF = localStorage.getItem("cityFilter") || "";
       const cityParam = cityF ? `&city=${encodeURIComponent(cityF)}` : "";
@@ -164,7 +154,17 @@ export default function Analytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
+
+  useEffect(() => {
+    const onCityChange = () => fetchAnalytics();
+    window.addEventListener("cityFilterChanged", onCityChange);
+    return () => window.removeEventListener("cityFilterChanged", onCityChange);
+  }, [fetchAnalytics]);
 
   if (loading || !data || !data.summary) {
     return <div className="loading">Cargando analytics...</div>;

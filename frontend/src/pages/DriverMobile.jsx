@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Truck, Navigation, MapPin, Clock, Fuel, Phone,
   AlertTriangle, CheckCircle2, ArrowRight, RefreshCw,
@@ -53,7 +53,7 @@ export default function DriverMobile() {
     navigate("/");
   };
 
-  const fetchDriverData = async () => {
+  const fetchDriverData = useCallback(async () => {
     try {
       const vRes = await fetch(`${API}/fleet/vehicles`, { headers: hdrs() });
       if (vRes.ok) {
@@ -94,7 +94,7 @@ export default function DriverMobile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedVehicleId]);
 
   const selectVehicle = (vid) => {
     setSelectedVehicleId(vid);
@@ -108,7 +108,7 @@ export default function DriverMobile() {
     fetchDriverData();
     const iv = setInterval(fetchDriverData, 8000);
     return () => clearInterval(iv);
-  }, [selectedVehicleId]);
+  }, [fetchDriverData]);
 
   const changeStatus = async (newStatus) => {
     if (!vehicle || updatingStatus) return;

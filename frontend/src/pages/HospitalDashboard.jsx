@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Building2, Ambulance, Users, Activity, BedDouble,
   AlertTriangle, RefreshCw, Heart, Plus, Database
@@ -16,22 +16,7 @@ export default function HospitalDashboard() {
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
 
-  const fetchHospitals = async () => {
-    try {
-      const res = await fetch(`${API}/api/resources/hospital-dashboard`);
-      if (res.ok) {
-        const data = await res.json();
-        setHospitals(data);
-        // Auto-seed if empty on first load
-        if (data.length === 0 && loading) {
-          await seedHospitals();
-        }
-      }
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  };
-
-  const seedHospitals = async () => {
+  const seedHospitals = useCallback(async () => {
     setSeeding(true);
     try {
       const res = await fetch(`${API}/api/hospitals/seed`, {
@@ -45,20 +30,35 @@ export default function HospitalDashboard() {
       }
     } catch (e) { console.error("Seed error:", e); }
     finally { setSeeding(false); }
-  };
+  }, []);
 
-  const fetchDetails = async (id) => {
+  const fetchHospitals = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/resources/hospital-dashboard`);
+      if (res.ok) {
+        const data = await res.json();
+        setHospitals(data);
+        // Auto-seed if empty on first load
+        if (data.length === 0 && loading) {
+          await seedHospitals();
+        }
+      }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  }, [loading, seedHospitals]);
+
+  const fetchDetails = useCallback(async (id) => {
     try {
       const res = await fetch(`${API}/api/resources/hospital-dashboard/${id}`);
       if (res.ok) setDetails(await res.json());
     } catch (e) { console.error(e); }
-  };
+  }, []);
 
   useEffect(() => {
     fetchHospitals();
     const iv = setInterval(fetchHospitals, 5000);
     return () => clearInterval(iv);
-  }, []);
+  }, [fetchHospitals]);
 
   useEffect(() => {
     if (selectedHospital) {
@@ -66,7 +66,7 @@ export default function HospitalDashboard() {
       const iv = setInterval(() => fetchDetails(selectedHospital), 5000);
       return () => clearInterval(iv);
     }
-  }, [selectedHospital]);
+  }, [selectedHospital, fetchDetails]);
 
   const occupancyColor = (pct) => pct > 85 ? "#ef4444" : pct > 60 ? "#f59e0b" : "#22c55e";
 

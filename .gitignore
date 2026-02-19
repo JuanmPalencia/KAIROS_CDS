@@ -55,3 +55,4 @@ backend/data/
 
 # ML models (large binary)
 backend/models/*.joblib
+/.claude

@@ -10,6 +10,7 @@ const POLL_INTERVAL = 5000; // 5 seconds
 export function useSecurityAlerts(token, enabled = true) {
   const [alerts, setAlerts] = useState([]);
   const [hasNew, setHasNew] = useState(false);
+  const [latestId, setLatestId] = useState(0);
   const latestIdRef = useRef(0);
 
   const clearNew = useCallback(() => setHasNew(false), []);
@@ -47,6 +48,7 @@ export function useSecurityAlerts(token, enabled = true) {
 
         if (!cancelled) {
           latestIdRef.current = data.latest_id;
+          setLatestId(data.latest_id);
         }
       } catch {
         // Silently ignore network errors
@@ -66,5 +68,5 @@ export function useSecurityAlerts(token, enabled = true) {
     };
   }, [token, enabled]);
 
-  return { alerts, hasNew, clearNew, latestId: latestIdRef.current };
+  return { alerts, hasNew, clearNew, latestId };
 }

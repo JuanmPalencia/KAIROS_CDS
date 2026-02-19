@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import {
   Key, LogOut as LogOutIcon, AlertTriangle, ClipboardList, CheckCircle,
@@ -24,11 +24,7 @@ export default function AuditLog() {
 
   const pageSize = 25;
 
-  useEffect(() => {
-    fetchLogs();
-  }, [page, filterAction, filterUser, filterResource, filterDateFrom, filterDateTo]);
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -55,7 +51,11 @@ export default function AuditLog() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, filterAction, filterUser, token]);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
   const exportCSV = async () => {
     try {

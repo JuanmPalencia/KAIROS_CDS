@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Users, UserCheck, Building2, BedDouble, Ambulance,
   ArrowRight, Clock, RefreshCw, Home, AlertTriangle,
@@ -33,25 +33,25 @@ export default function PatientTracking() {
   const [seeding, setSeeding] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const url = showAll ? `${API}/api/epcr/all-tracking-full` : `${API}/api/epcr/all-tracking`;
       const res = await fetch(url);
       if (res.ok) setPatients(await res.json());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  };
+  }, [showAll]);
 
-  const seedPatients = async () => {
+  const seedPatients = useCallback(async () => {
     setSeeding(true);
     try {
       const res = await fetch(`${API}/api/epcr/seed-demo-patients`, { method: "POST" });
       if (res.ok) await fetchData();
     } catch (e) { console.error(e); }
     finally { setSeeding(false); }
-  };
+  }, [fetchData]);
 
-  const advancePhase = async (trackingId, nextPhase) => {
+  const advancePhase = useCallback(async (trackingId, nextPhase) => {
     try {
       const res = await fetch(`${API}/api/epcr/tracking/${trackingId}/phase`, {
         method: "PUT",
@@ -60,13 +60,13 @@ export default function PatientTracking() {
       });
       if (res.ok) await fetchData();
     } catch (e) { console.error(e); }
-  };
+  }, [fetchData]);
 
   useEffect(() => {
     fetchData();
     const iv = setInterval(fetchData, 5000);
     return () => clearInterval(iv);
-  }, [showAll]);
+  }, [fetchData]);
 
   const phaseBadge = (phase) => {
     const p = PHASES.find(x => x.key === phase) || PHASES[0];

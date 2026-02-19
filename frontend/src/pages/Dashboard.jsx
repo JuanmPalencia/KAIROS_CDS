@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
@@ -65,6 +65,25 @@ function MapLegend() {
     </div>
   );
 }
+
+// WMO weather code mapping (condition, alert, eta_multiplier)
+const WMO_MAP = {
+  0:["CLEAR","GREEN",1,"Despejado"],1:["CLEAR","GREEN",1,"Mayormente despejado"],
+  2:["CLOUD","GREEN",1,"Parcialmente nublado"],3:["CLOUD","GREEN",1,"Nublado"],
+  45:["FOG","YELLOW",1.3,"Niebla"],48:["FOG","YELLOW",1.3,"Niebla engelante"],
+  51:["DRIZZLE","GREEN",1.05,"Llovizna ligera"],53:["DRIZZLE","YELLOW",1.1,"Llovizna moderada"],55:["DRIZZLE","YELLOW",1.15,"Llovizna intensa"],
+  56:["DRIZZLE","YELLOW",1.2,"Llovizna engelante"],57:["DRIZZLE","ORANGE",1.3,"Llovizna engelante intensa"],
+  61:["RAIN","YELLOW",1.2,"Lluvia ligera"],63:["RAIN","ORANGE",1.3,"Lluvia moderada"],65:["RAIN","RED",1.5,"Lluvia intensa"],
+  66:["RAIN","ORANGE",1.3,"Lluvia engelante"],67:["RAIN","RED",1.5,"Lluvia engelante intensa"],
+  71:["SNOW","ORANGE",1.5,"Nevada ligera"],73:["SNOW","RED",1.7,"Nevada moderada"],75:["SNOW","RED",2.0,"Nevada intensa"],
+  77:["SNOW","ORANGE",1.4,"Granizo fino"],
+  80:["SHOWERS","YELLOW",1.2,"Chubascos ligeros"],81:["SHOWERS","ORANGE",1.4,"Chubascos moderados"],82:["SHOWERS","RED",1.6,"Chubascos fuertes"],
+  85:["SNOW","ORANGE",1.5,"Chubascos de nieve"],86:["SNOW","RED",1.8,"Chubascos de nieve fuertes"],
+  95:["STORM","RED",1.8,"Tormenta"],96:["STORM","RED",2.0,"Tormenta con granizo"],99:["STORM","RED",2.2,"Tormenta severa con granizo"],
+};
+const COND_ICON = {
+  CLEAR:"☀️",CLOUD:"☁️",FOG:"🌫️",DRIZZLE:"🌦️",RAIN:"🌧️",SHOWERS:"🌦️",SNOW:"❄️",STORM:"⛈️",HEAT:"🔥",
+};
 
 export default function Dashboard() {
   const { user, token } = useAuth();
@@ -174,29 +193,10 @@ export default function Dashboard() {
     } catch (e) { console.error("Error fetching resource layers:", e); }
   };
 
-  // WMO weather code mapping (condition, alert, eta_multiplier)
-  const WMO_MAP = {
-    0:["CLEAR","GREEN",1,"Despejado"],1:["CLEAR","GREEN",1,"Mayormente despejado"],
-    2:["CLOUD","GREEN",1,"Parcialmente nublado"],3:["CLOUD","GREEN",1,"Nublado"],
-    45:["FOG","YELLOW",1.3,"Niebla"],48:["FOG","YELLOW",1.3,"Niebla engelante"],
-    51:["DRIZZLE","GREEN",1.05,"Llovizna ligera"],53:["DRIZZLE","YELLOW",1.1,"Llovizna moderada"],55:["DRIZZLE","YELLOW",1.15,"Llovizna intensa"],
-    56:["DRIZZLE","YELLOW",1.2,"Llovizna engelante"],57:["DRIZZLE","ORANGE",1.3,"Llovizna engelante intensa"],
-    61:["RAIN","YELLOW",1.2,"Lluvia ligera"],63:["RAIN","ORANGE",1.3,"Lluvia moderada"],65:["RAIN","RED",1.5,"Lluvia intensa"],
-    66:["RAIN","ORANGE",1.3,"Lluvia engelante"],67:["RAIN","RED",1.5,"Lluvia engelante intensa"],
-    71:["SNOW","ORANGE",1.5,"Nevada ligera"],73:["SNOW","RED",1.7,"Nevada moderada"],75:["SNOW","RED",2.0,"Nevada intensa"],
-    77:["SNOW","ORANGE",1.4,"Granizo fino"],
-    80:["SHOWERS","YELLOW",1.2,"Chubascos ligeros"],81:["SHOWERS","ORANGE",1.4,"Chubascos moderados"],82:["SHOWERS","RED",1.6,"Chubascos fuertes"],
-    85:["SNOW","ORANGE",1.5,"Chubascos de nieve"],86:["SNOW","RED",1.8,"Chubascos de nieve fuertes"],
-    95:["STORM","RED",1.8,"Tormenta"],96:["STORM","RED",2.0,"Tormenta con granizo"],99:["STORM","RED",2.2,"Tormenta severa con granizo"],
-  };
-  const COND_ICON = {
-    CLEAR:"☀️",CLOUD:"☁️",FOG:"🌫️",DRIZZLE:"🌦️",RAIN:"🌧️",SHOWERS:"🌦️",SNOW:"❄️",STORM:"⛈️",HEAT:"🔥",
-  };
-
   // Real-time weather directly from Open-Meteo (no backend round-trip)
   // Includes precipitation mm to cross-check WMO code accuracy
   const weatherTimerRef = useRef(null);
-  const fetchWeather = async (lat, lon) => {
+  const fetchWeather = useCallback(async (lat, lon) => {
     try {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,precipitation,rain,snowfall,cloud_cover&timezone=auto`;
       const res = await fetch(url);
@@ -250,15 +250,15 @@ export default function Dashboard() {
         icon: COND_ICON[cond] || "☁️",
       });
     } catch (e) { console.error("Weather fetch error:", e); }
-  };
+  }, []);
 
   // Debounced weather fetch following mouse position (300ms debounce)
-  const onMapMouseMove = (e) => {
+  const onMapMouseMove = useCallback((e) => {
     clearTimeout(weatherTimerRef.current);
     weatherTimerRef.current = setTimeout(() => {
       fetchWeather(e.latlng.lat.toFixed(4), e.latlng.lng.toFixed(4));
     }, 300);
-  };
+  }, [fetchWeather]);
 
   const fetchHospitals = async () => {
     try {
@@ -796,7 +796,7 @@ export default function Dashboard() {
         map.remove();
       } catch { /* ignored */ }
     };
-  }, []);
+  }, [focusedVehicleId, fetchWeather, onMapMouseMove, showCoverage, token, user?.role, incidents]);
 
   // Toggle heatmap on/off
   useEffect(() => {
