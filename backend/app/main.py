@@ -100,16 +100,24 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(MetricsMiddleware)
 
-# Security middleware stack (order matters — outermost runs first)
+# Security middleware stack
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(SecurityMiddleware)
 
-# CORS — restricted origins, explicit methods
-# CORS origins from env, with sensible defaults for development
-_cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000")
+# CORS — MUST be last (outermost) so preflight OPTIONS are handled
+# before any security middleware can block them
+_cors_origins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:3000",
+]
+logger.info(f"CORS allowed origins: {_cors_origins}")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in _cors_origins.split(",")],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-CSRF-Token", "X-Request-ID"],

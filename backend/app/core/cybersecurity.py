@@ -389,6 +389,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response: Response = await call_next(request)
 
+        # Skip security headers on CORS preflight to avoid conflicts
+        if request.method == "OPTIONS":
+            return response
+
         # Standard security headers
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
@@ -431,6 +435,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next):
+        # Let CORS preflight pass through without any security checks
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         ip = request.client.host if request.client else "0.0.0.0"
         path = request.url.path
 

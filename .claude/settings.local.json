@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(git checkout:*)",
+      "Bash(pip install:*)",
+      "Bash(npm install:*)",
+      "Bash(python -m uvicorn:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)",
+      "Bash(ping:*)",
+      "Bash(Start-Sleep -Seconds 4)",
+      "Bash(Select-String -Pattern \"Access-Control|HTTP/\")",
+      "Bash(python:*)",
+      "Bash(lsof:*)",
+      "Bash(netstat:*)",
+      "Bash(ss:*)",
+      "Bash(taskkill:*)",
+      "Bash(powershell:*)",
+      "Bash(\"/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe\" -Command \"Get-NetTCPConnection -LocalPort 5001 | Select-Object OwningProcess\")",
+      "Bash(\"/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe\" -Command \"Get-NetTCPConnection -LocalPort 5001 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; Write-Output ''Killed all''\")",
+      "Bash(\"/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe\" -Command \"11672,6652,30704,52048,48708 | ForEach-Object { Stop-Process -Id $_-Force -ErrorAction SilentlyContinue }; Write-Output ''Done''\")",
+      "Bash(\"/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe\" -NoProfile -Command 'Stop-Process -Id 11672 -Force -EA 0; Stop-Process -Id 6652 -Force -EA 0; Stop-Process -Id 30704 -Force -EA 0; Stop-Process -Id 52048 -Force -EA 0; Stop-Process -Id 48708 -Force -EA 0; echo OK')",
+      "Bash(\"/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe\" -NoProfile -Command 'Get-Process python -EA 0 | Stop-Process -Force; Get-Process uvicorn -EA 0 | Stop-Process -Force; echo DONE')",
+      "Bash(\"/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe\" -NoProfile -Command 'Get-Process python -EA 0 | Stop-Process -Force; echo DONE')"
+    ]
+  }
+}
