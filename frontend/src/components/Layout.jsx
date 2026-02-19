@@ -28,10 +28,12 @@ import {
   HeartPulse,
   Clock,
   Truck,
+  Bell,
 } from "lucide-react";
 import "../styles/Layout.css";
 import { API_BASE } from "../config";
 import ChatWidget from "./ChatWidget";
+import { useSecurityAlerts } from "../hooks/useSecurityAlerts";
 
 /* ── Isolated clock component — only this rerenders every second ── */
 const NavClock = memo(function NavClock() {
@@ -107,9 +109,11 @@ function DropdownMenu({
 }
 
 export default function Layout({ children }) {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const isAdmin = user?.role === "ADMIN";
+  const { hasNew, clearNew, alerts } = useSecurityAlerts(token, isAdmin);
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark";
   });
@@ -288,6 +292,17 @@ export default function Layout({ children }) {
               ))}
             </select>
           </div>
+          {isAdmin && (
+            <button
+              className={`security-alert-btn ${hasNew ? "has-alerts" : ""}`}
+              onClick={() => { clearNew(); navigate("/security"); }}
+              title={hasNew ? `${alerts.length} alertas de seguridad` : "Sin alertas nuevas"}
+              aria-label="Alertas de seguridad"
+            >
+              <Bell size={18} />
+              {hasNew && <span className="alert-badge">{alerts.length > 9 ? "9+" : alerts.length}</span>}
+            </button>
+          )}
           <button
             className="theme-toggle-btn"
             onClick={() => setDarkMode((v) => !v)}

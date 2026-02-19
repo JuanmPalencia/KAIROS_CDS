@@ -56,7 +56,7 @@ KAIROS CDS (Clinical Decision Support) es un sistema de gemelo digital en tiempo
 | **IA Integrada** | 10 módulos 100% locales (sklearn): clasificación de severidad, predicción de demanda, ETA, anomalías, mantenimiento predictivo, visión, chat, tráfico, recomendaciones, asignación óptima. Sin dependencias externas (OpenAI, etc.) |
 | **Anonimización RGPD** | Pipeline automático de anonimización (supresión + generalización + perturbación) con reentrenamiento continuo de modelos |
 | **Blockchain BSV** | Notarización de auditoría con árboles Merkle y difusión on-chain |
-| **Ciberseguridad** | Rate limiting, brute-force detection, input scanning, CSRF, gestión de sesiones, firewall de IPs |
+| **Ciberseguridad** | Rate limiting, brute-force detection, input scanning, CSRF, gestión de sesiones, firewall de IPs, JWT blacklist, cifrado AES-256-GCM de campos PII, HIBP breach check, security score 0-100, alertas en tiempo real |
 | **Monitorización** | Prometheus + Alertmanager con 6 métricas y 4 reglas de alerta |
 | **RBAC** | 4 roles: ADMIN, OPERATOR, DOCTOR, VIEWER con 22 permisos granulares |
 
@@ -64,7 +64,7 @@ KAIROS CDS (Clinical Decision Support) es un sistema de gemelo digital en tiempo
 
 | Métrica | Valor |
 |---|---|
-| Endpoints API REST | 133 |
+| Endpoints API REST | 134 |
 | Endpoint WebSocket | 1 |
 | Routers API | 21 |
 | Páginas frontend | 15 |
@@ -150,7 +150,7 @@ Auditoría registrada → Merkle batch → BSV blockchain
 │  Recharts        │   Pydantic 2.0           │  BSV Blockchain                 │
 │  lucide-react    │   uvicorn (ASGI)         │  OSRM (routing externo)         │
 │                  │                          │                                 │
-│  15 páginas      │   131 endpoints          │  Docker Compose                 │
+│  15 páginas      │   134 endpoints          │  Docker Compose                 │
 │  4 componentes   │   21 routers             │  4 servicios                    │
 │  18 CSS (dark)   │   10 módulos IA          │  4 volúmenes persistentes       │
 │  City filter     │   TwinEngine (async)     │                                 │
@@ -564,10 +564,10 @@ backend/
 │   ├── main.py                 # App FastAPI, lifespan, middleware, WS
 │   ├── config.py               # Variables de entorno y constantes
 │   ├── requirements.txt        # 27 dependencias Python
-│   ├── api/                    # 21 routers (131 endpoints)
-│   ├── auth/                   # JWT + bcrypt + RBAC
+│   ├── api/                    # 21 routers (134 endpoints)
+│   ├── auth/                   # JWT + bcrypt + RBAC + token blacklist
 │   ├── blockchain/             # 7 módulos: Merkle, BSV, integridad
-│   ├── core/                   # 17 módulos: IA, TwinEngine, cybersec
+│   ├── core/                   # 18 módulos: IA, TwinEngine, cybersec, encryption
 │   ├── domain/                 # DTOs Pydantic
 │   ├── realtime/               # WebSocket manager
 │   └── storage/                # ORM + repositorios
@@ -591,8 +591,12 @@ Añade a cada respuesta:
 - `X-Frame-Options: DENY`
 - `X-XSS-Protection: 1; mode=block`
 - `Strict-Transport-Security: max-age=31536000; includeSubDomains`
-- `Content-Security-Policy: default-src 'self'`
+- `Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.jsdelivr.net; ...`
 - `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=(self)`
+- Eliminación de fingerprint (`Server`, `X-Powered-By`)
+
+> **Nota:** La CSP incluye `cdn.jsdelivr.net` para que Swagger UI (`/docs`) cargue correctamente, y `fastapi.tiangolo.com` para el favicon.
 
 ### SecurityMiddleware
 - Rate limiting por IP: 100 requests/60s por defecto, 5 login/60s
@@ -969,25 +973,41 @@ curl -X POST http://localhost:5001/api/ai/retrain \
 │  ├─ X-Frame-Options: DENY                  │
 │  ├─ X-Content-Type-Options: nosniff         │
 │  ├─ HSTS: max-age=31536000                  │
-│  └─ CSP: default-src 'self'                 │
+│  ├─ CSP: +cdn.jsdelivr.net (Swagger UI)     │
+│  ├─ Permissions-Policy                      │
+│  └─ Eliminación Server/X-Powered-By         │
 ├─────────────────────────────────────────────┤
 │  SecurityMiddleware                         │
-│  ├─ Rate Limiting (100 req/60s general)     │
+│  ├─ IP blocking check                       │
+│  ├─ Rate Limiting (100 req/60s, 5 login/60s)│
+│  ├─ Real IP extraction (X-Forwarded-For)    │
 │  ├─ Brute-Force Detection (5 intentos)      │
 │  ├─ Input Scanning (SQL/XSS/Path Traversal) │
-│  └─ Session Management                     │
+│  └─ Body scanning JSON (POST/PUT/PATCH)     │
 ├─────────────────────────────────────────────┤
 │  JWT Authentication                         │
 │  ├─ HS256 signing                           │
-│  ├─ Token expiration: 30 min                │
-│  └─ Role-based claims                      │
+│  ├─ Token expiration: 30 min (configurable) │
+│  ├─ JTI claim + token blacklist (logout)    │
+│  ├─ Role-based claims (sub + role + jti)    │
+│  └─ Session tracking (touch_session)        │
 ├─────────────────────────────────────────────┤
 │  RBAC: ADMIN / OPERATOR / DOCTOR / VIEWER   │
 ├─────────────────────────────────────────────┤
-│  Password Policy                            │
+│  Password Policy + HIBP Breach Check        │
 │  ├─ Mínimo 8 caracteres                    │
 │  ├─ Requiere mayúscula + minúscula + dígito│
-│  └─ Entropía mínima calculada              │
+│  ├─ Entropía calculada (bits)              │
+│  └─ k-anonymity HIBP (privacy-safe)         │
+├─────────────────────────────────────────────┤
+│  Field-Level Encryption (AES-256-GCM)       │
+│  ├─ EncryptedString SQLAlchemy type         │
+│  ├─ Prefijo ENC: para datos cifrados        │
+│  └─ Transparente para la app (enc/dec auto) │
+├─────────────────────────────────────────────┤
+│  Security Alerts (Real-Time Polling)        │
+│  ├─ Hook useSecurityAlerts (5s poll)        │
+│  └─ Browser Notification API               │
 ├─────────────────────────────────────────────┤
 │  Blockchain Audit Trail (inmutable)         │
 └─────────────────────────────────────────────┘
@@ -997,16 +1017,23 @@ curl -X POST http://localhost:5001/api/ai/retrain \
 
 | Módulo | Descripción | Estado |
 |---|---|---|
-| Rate Limiting | Límite de peticiones por IP/endpoint | Activo |
-| Brute-Force Detection | Bloqueo tras intentos fallidos de login | Activo |
-| Input Sanitization | Detección de SQL injection, XSS, path traversal | Activo |
-| Security Headers | HSTS, CSP, X-Frame-Options, etc. | Activo |
+| Rate Limiting | Límite de peticiones por IP/endpoint (configurable) | Activo |
+| Brute-Force Detection | Bloqueo tras N intentos fallidos de login (configurable) | Activo |
+| Input Sanitization | SQL injection, XSS, path traversal en query/URL/body | Activo |
+| Security Headers | HSTS, CSP (+cdn.jsdelivr.net), X-Frame-Options, etc. | Activo |
 | CSRF Protection | Tokens de un solo uso para operaciones sensibles | Activo |
-| Session Management | Tracking de sesiones JWT activas | Activo |
-| IP Blocking | Bloqueo/desbloqueo manual de IPs | Activo |
-| Password Policy | Validación de fortaleza de contraseñas | Activo |
-| JWT Encryption | HS256 con clave configurable | Activo |
-| Audit Blockchain | Registro inmutable de acciones | Activo |
+| Session Management | Tracking de sesiones JWT activas con touch/revoke | Activo |
+| JWT Token Blacklist | Revocación de tokens por JTI tras logout | Activo |
+| IP Blocking | Bloqueo/desbloqueo manual de IPs con motivo | Activo |
+| Password Policy | Validación de fortaleza + entropía calculada | Activo |
+| HIBP Breach Check | Comprobación k-anonymity contra base HIBP (privado) | Activo |
+| Field Encryption | AES-256-GCM para campos PII en BD (EncryptedString) | Configurable |
+| JWT Signing | HS256 con clave configurable vía `SECRET_KEY` | Activo |
+| Real IP Extraction | X-Forwarded-For / CF-Connecting-IP / X-Real-IP | Activo |
+| Security Score | Puntuación 0-100 con desglose por categoría | Activo |
+| Real-Time Alerts | Polling 5s de alertas HIGH/CRITICAL + notif. navegador | Activo |
+| Login Anomaly Detection | Historial de login con detección de patrones anómalos | Activo |
+| Audit Blockchain | Registro inmutable de acciones con Merkle + BSV | Activo |
 
 ## 10.3 Rate Limits configurados
 
@@ -1035,19 +1062,69 @@ Patrones detectados:
 | Firewall | IPs bloqueadas + formulario de bloqueo manual |
 | Herramientas | Escáner de amenazas + verificador de contraseñas + config |
 
-## 10.6 Endpoints de seguridad (9 endpoints)
+## 10.6 Endpoints de seguridad (12 endpoints)
 
-| Método | Endpoint | Descripción |
+| Método | Endpoint | Rol | Descripción |
+|---|---|---|---|
+| `GET` | `/api/security/dashboard` | ADMIN | Panel principal (stats + protecciones + config) |
+| `GET` | `/api/security/score` | ADMIN | Security health score (0-100) con desglose |
+| `GET` | `/api/security/alerts/recent` | ADMIN | Alertas HIGH/CRITICAL desde `since_id` |
+| `GET` | `/api/security/login-history` | ADMIN | Historial de login con detección de anomalías |
+| `GET` | `/api/security/events` | ADMIN | Eventos de seguridad (filtro por severidad) |
+| `GET` | `/api/security/sessions` | ADMIN | Sesiones JWT activas |
+| `GET` | `/api/security/blocked-ips` | ADMIN | IPs bloqueadas con motivo y fecha |
+| `POST` | `/api/security/block-ip` | ADMIN | Bloquear IP manualmente |
+| `DELETE` | `/api/security/block-ip/{ip}` | ADMIN | Desbloquear IP |
+| `GET` | `/api/security/csrf-token` | Auth | Obtener token CSRF de un solo uso |
+| `POST` | `/api/security/scan-input` | ADMIN | Escanear texto para amenazas |
+| `POST` | `/api/security/check-password` | Auth | Verificar fortaleza + HIBP breach check |
+
+## 10.7 Cifrado de campos PII (AES-256-GCM)
+
+El módulo `core/encryption.py` implementa cifrado transparente a nivel de columna SQLAlchemy:
+
+```python
+from .core.encryption import EncryptedString
+
+class Patient(Base):
+    phone = Column(EncryptedString(255), nullable=True)
+    # Se almacena como "ENC:<base64(nonce+ciphertext)>"
+    # Se lee desencriptado automáticamente
+```
+
+| Aspecto | Detalle |
+|---|---|
+| Algoritmo | AES-256-GCM (autenticado) |
+| Nonce | 96 bits aleatorios por cada cifrado |
+| Clave | 32 bytes, base64-encoded, vía `FIELD_ENCRYPTION_KEY` |
+| Prefijo | `ENC:` para distinguir valores cifrados |
+| Modo dev | Sin `FIELD_ENCRYPTION_KEY` → almacenamiento en claro |
+| Activación | `is_encryption_active()` → refleja en security dashboard |
+
+Generar clave:
+```bash
+python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
+```
+
+## 10.8 Security Score (0-100)
+
+Calculado automáticamente por `compute_security_score()`:
+
+| Categoría | Peso | Factores |
 |---|---|---|
-| `GET` | `/api/security/dashboard` | Panel principal (stats + protecciones + config) |
-| `GET` | `/api/security/events` | Eventos de seguridad (filtro por severidad) |
-| `GET` | `/api/security/sessions` | Sesiones JWT activas |
-| `GET` | `/api/security/blocked-ips` | IPs bloqueadas con motivo y fecha |
-| `POST` | `/api/security/block-ip` | Bloquear IP manualmente |
-| `DELETE` | `/api/security/block-ip/{ip}` | Desbloquear IP |
-| `GET` | `/api/security/csrf-token` | Obtener token CSRF |
-| `POST` | `/api/security/scan-input` | Escanear texto para amenazas |
-| `POST` | `/api/security/check-password` | Verificar fortaleza de contraseña |
+| Protecciones activas | 25% | Rate limiting habilitado, cifrado de campos activo |
+| Actividad reciente | 25% | Eventos HIGH/CRITICAL en últimas 24 h |
+| Brute force | 25% | IPs bloqueadas activas, intentos fallidos recientes |
+| Rate limiting | 25% | Excesos de límite en última hora |
+
+## 10.9 Alertas en tiempo real
+
+El hook `useSecurityAlerts.js` en el frontend realiza polling cada 5 segundos a `/api/security/alerts/recent?since_id=N`:
+
+- Solo recibe alertas **HIGH** y **CRITICAL** nuevas (paginación por ID)
+- Guarda hasta 50 alertas en memoria de la sesión
+- Dispara `Notification` nativa del navegador (solicita permiso)
+- Expone `{ alerts, hasNew, clearNew }` a los componentes consumidores
 
 ---
 
@@ -1124,8 +1201,11 @@ frontend/src/
 │   ├── ChatWidget.jsx   # Chat operativo multi-canal
 │   ├── ChatWidget.css
 │   └── mapIcons.js      # Iconos SVG para Leaflet
+├── hooks/
+│   ├── useIncidentNotifications.js  # Browser notifications + audio
+│   └── useSecurityAlerts.js         # Polling alertas HIGH/CRITICAL (5s)
 ├── context/
-│   └── AuthContext.jsx  # JWT provider + login/logout + role checking
+│   └── AuthContext.jsx  # JWT provider + login/logout + auto-logout inactividad
 ├── pages/               # 15 páginas
 │   ├── Dashboard.jsx    # (2245 líneas) Mapa principal
 │   ├── IncidentList.jsx
@@ -1226,9 +1306,12 @@ frontend/src/
 
 ### Seguridad (`/security`) — Solo ADMIN
 - 5 pestañas: Resumen, Eventos, Sesiones, Firewall, Herramientas
-- 6 KPIs + 8 indicadores de protección
-- Escáner de amenazas + verificador de contraseñas
-- Gestión de IPs bloqueadas
+- **Security Score** (0-100) con barra visual y desglose por categoría
+- 6 KPIs + 17 indicadores de protección (incluyendo cifrado de campos e HIBP)
+- **Alertas en tiempo real** — badge con contador de alertas nuevas
+- **Historial de login** con detección de anomalías por usuario
+- Escáner de amenazas + verificador de contraseñas con HIBP breach check
+- Gestión de IPs bloqueadas (bloqueo manual + desbloqueo)
 
 ### App Conductor (`/driver`)
 - Interfaz móvil optimizada para conductores de ambulancia
@@ -1724,9 +1807,12 @@ async def endpoint(user: User = Depends(require_role(["ADMIN", "OPERATOR"]))):
 {
   "sub": "admin",
   "role": "ADMIN",
-  "exp": 1740000000
+  "exp": 1740000000,
+  "iat": 1740000000,
+  "jti": "uuid-unico-por-token"
 }
 ```
+> El campo `jti` (JWT ID) permite revocar tokens individualmente al hacer logout, añadiéndolos a la blacklist en memoria.
 
 ## 22.3 Usuarios por defecto
 
@@ -1835,7 +1921,7 @@ Zonas de cobertura predefinidas para gestión del estado del sistema.
 
 # 25. Referencia Completa de API
 
-## 25.1 Resumen por categoría (131 endpoints)
+## 25.1 Resumen por categoría (134 endpoints)
 
 | Categoría | Prefijo | Endpoints |
 |---|---|---|
@@ -1856,13 +1942,13 @@ Zonas de cobertura predefinidas para gestión del estado del sistema.
 | ePCR | `/api/epcr` | 9 |
 | MCI | `/api/mci` | 7 |
 | Resources | `/api/resources` | 17 |
-| Security | `/api/security` | 9 |
+| Security | `/api/security` | 12 |
 | Simulation | `/simulation` | 8 |
 | Digital Twin | `/digital-twin` | 4 |
 | Chat | `/api/chat` | 3 |
 | Alerts | `/api/alerts` | 2 |
 | WebSocket | `/ws/live` | 1 |
-| **TOTAL** | | **~131** |
+| **TOTAL** | | **~134** |
 
 ## 25.2 Documentación interactiva
 
@@ -1965,10 +2051,12 @@ npm test
 | `BSV_NETWORK` | `main` | Red BSV: main/test |
 | `ARC_URL` | `https://arc.gorillapool.io` | URL del nodo ARC BSV |
 | `TICK_MS` | `500` | Intervalo del TwinEngine (ms) |
-| `SECURITY_RATE_LIMIT_ENABLED` | `true` | Activar rate limiting |
-| `SECURITY_BRUTE_FORCE_ENABLED` | `true` | Activar detección brute-force |
+| `SECURITY_RATE_LIMIT_ENABLED` | `true` | Activar/desactivar rate limiting |
+| `SECURITY_BRUTE_FORCE_ENABLED` | `true` | Activar/desactivar detección brute-force |
 | `SECURITY_MAX_LOGIN_ATTEMPTS` | `5` | Intentos de login antes de lockout |
 | `SECURITY_LOCKOUT_MINUTES` | `10` | Duración del lockout (minutos) |
+| `TRUSTED_PROXY_COUNT` | `0` | Número de proxies de confianza (0=conexión directa) |
+| `FIELD_ENCRYPTION_KEY` | `""` | Clave AES-256-GCM base64 de 32 bytes (vacío=dev sin cifrado) |
 | `CORS_ORIGINS` | `http://localhost:5173` | Orígenes CORS permitidos (separados por coma) |
 
 ## 27.2 Configuración del frontend
@@ -2013,6 +2101,10 @@ pip install -r app/requirements.txt
 
 ### 4. Iniciar backend
 ```bash
+# Desde la raíz del proyecto (recomendado):
+python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 5001 --reload
+
+# Alternativa: desde el directorio backend
 cd backend
 # Windows PowerShell:
 $env:PYTHONPATH = "."
@@ -2089,7 +2181,7 @@ curl -X POST http://localhost:5001/simulation/auto-generate/start
 |---|---|
 | Vehículos simultáneos | ~50 (por rendimiento del TwinEngine) |
 | Incidentes activos | ~200 antes de degradación |
-| Eventos de seguridad en memoria | 10.000 (rotación FIFO) |
+| Eventos de seguridad en memoria | 2.000 (rotación FIFO, `MAX_SECURITY_EVENTS`) |
 | Audit logs | Sin límite (PostgreSQL) |
 | Sesiones activas | Sin límite (in-memory dict) |
 
@@ -2099,6 +2191,7 @@ curl -X POST http://localhost:5001/simulation/auto-generate/start
 
 | Término | Definición |
 |---|---|
+| **AES-256-GCM** | Advanced Encryption Standard 256-bit en modo Galois/Counter — cifrado autenticado |
 | **BSV** | Bitcoin SV — blockchain utilizada para notarización de auditoría |
 | **CDS** | Clinical Decision Support — soporte a decisiones clínicas |
 | **CORS** | Cross-Origin Resource Sharing — política de seguridad del navegador |
@@ -2107,7 +2200,9 @@ curl -X POST http://localhost:5001/simulation/auto-generate/start
 | **ePCR** | Electronic Patient Care Report — informe electrónico de atención al paciente |
 | **ETA** | Estimated Time of Arrival — tiempo estimado de llegada |
 | **GIS** | Geographic Information System — sistema de información geográfica |
+| **HIBP** | Have I Been Pwned — servicio de comprobación de contraseñas comprometidas (k-anonymity) |
 | **HSTS** | HTTP Strict Transport Security — cabecera de seguridad |
+| **JTI** | JWT ID — claim único por token que permite revocación individual |
 | **JWT** | JSON Web Token — estándar de autenticación |
 | **KPI** | Key Performance Indicator — indicador clave de rendimiento |
 | **MCI** | Mass Casualty Incident — incidente con múltiples víctimas |
@@ -2144,6 +2239,7 @@ pydantic[email]
 python-jose[cryptography]
 passlib[bcrypt]
 bcrypt
+cryptography   # AES-256-GCM field encryption (instalado como dep. de python-jose)
 python-dotenv
 python-multipart
 prometheus-client

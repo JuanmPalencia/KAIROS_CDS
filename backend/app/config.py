@@ -31,6 +31,13 @@ SECURITY_BRUTE_FORCE_ENABLED = os.getenv("SECURITY_BRUTE_FORCE_ENABLED", "true")
 SECURITY_MAX_LOGIN_ATTEMPTS = int(os.getenv("SECURITY_MAX_LOGIN_ATTEMPTS", "5"))
 SECURITY_LOCKOUT_MINUTES = int(os.getenv("SECURITY_LOCKOUT_MINUTES", "10"))
 
+# Proxy configuration (0 = direct connection, 1+ = behind N proxies)
+TRUSTED_PROXY_COUNT = int(os.getenv("TRUSTED_PROXY_COUNT", "0"))
+
+# Field-level encryption key (32 bytes, base64-encoded)
+# Generate: python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
+FIELD_ENCRYPTION_KEY = os.getenv("FIELD_ENCRYPTION_KEY", "")
+
 # Twin Engine
 TICK_MS = int(os.getenv("TICK_MS", "500"))
 

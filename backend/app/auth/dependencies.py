@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..storage.db import get_db
 from ..storage.models_sql import User
 from .security import decode_access_token
-from ..core.cybersecurity import touch_session
+from ..core.cybersecurity import touch_session, is_token_blacklisted
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -19,25 +19,30 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     payload = decode_access_token(token)
     if payload is None:
         raise credentials_exception
-    
+
+    # Check if token has been revoked (logout blacklist)
+    jti = payload.get("jti")
+    if jti and is_token_blacklisted(jti):
+        raise credentials_exception
+
     username: str = payload.get("sub")
     if username is None:
         raise credentials_exception
-    
+
     user = db.query(User).filter(User.username == username).first()
     if user is None:
         raise credentials_exception
-    
+
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-    
+
     # Track session activity
     touch_session(token)
-    
+
     return user
 
 

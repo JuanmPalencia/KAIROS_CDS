@@ -45,8 +45,15 @@ export const AuthProvider = ({ children }) => {
     tokenRef.current = token;
   }, [token]);
 
-  /* ── Forced logout ── */
+  /* ── Forced logout — revokes token server-side ── */
   const logout = useCallback(() => {
+    const t = tokenRef.current;
+    if (t) {
+      fetch(`${API}/api/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${t}` },
+      }).catch(() => {}); // Fire-and-forget
+    }
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);

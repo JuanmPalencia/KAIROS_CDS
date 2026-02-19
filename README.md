@@ -20,12 +20,14 @@
 6. [Funcionalidades](#funcionalidades)
 7. [Módulos de IA](#módulos-de-ia)
 8. [Blockchain y Auditoría](#blockchain-y-auditoría)
-9. [Referencia de API](#referencia-de-api)
-10. [Frontend — Páginas](#frontend--páginas)
-11. [Monitorización](#monitorización)
-12. [Tests](#tests)
-13. [Variables de entorno](#variables-de-entorno)
-14. [Roles y permisos](#roles-y-permisos)
+9. [Ciberseguridad — Endpoints](#ciberseguridad--endpoints)
+10. [Referencia de API](#referencia-de-api)
+11. [Frontend — Páginas](#frontend--páginas)
+12. [Monitorización](#monitorización)
+13. [Tests](#tests)
+14. [Variables de entorno](#variables-de-entorno)
+15. [Roles y permisos](#roles-y-permisos)
+16. [Docker — Despliegue completo](#docker--despliegue-completo)
 
 ---
 
@@ -106,6 +108,10 @@ pip install -r app/requirements.txt
 #### 3. Arrancar backend
 
 ```bash
+# Desde la raíz del proyecto (recomendado):
+python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 5001 --reload
+
+# Alternativa: desde el directorio backend
 cd backend
 # Windows PowerShell:
 $env:PYTHONPATH = "."
@@ -204,6 +210,8 @@ KAIROS_CDS/
 │   │   │   ├── ai_severity_classifier.py      # TF-IDF + RandomForest severity classifier
 │   │   │   ├── ai_traffic_integration.py      # Traffic-aware routing
 │   │   │   ├── ai_vision_analyzer.py  #   Pillow + SVM scene analysis
+│   │   │   ├── cybersecurity.py       #   Rate limiting, brute-force, CSRF, headers middleware
+│   │   │   ├── encryption.py          #   AES-256-GCM field-level encryption (EncryptedString)
 │   │   │   ├── incident_generator.py  #   Synthetic incident generator
 │   │   │   ├── metrics.py             #   Prometheus counters/histograms
 │   │   │   ├── routing.py             #   OSRM routing integration
@@ -259,7 +267,8 @@ KAIROS_CDS/
 │   │   │   ├── Skeleton.jsx           #   Loading skeletons (table/cards/KPI)
 │   │   │   └── mapIcons.js            #   Leaflet SVG icons
 │   │   ├── hooks/
-│   │   │   └── useIncidentNotifications.js  # Browser notifications + audio
+│   │   │   ├── useIncidentNotifications.js  # Browser notifications + audio
+│   │   │   └── useSecurityAlerts.js         # Polling alertas HIGH/CRITICAL (5 s)
 │   │   ├── context/
 │   │   │   └── AuthContext.jsx        #   JWT auth provider
 │   │   ├── pages/                     #   15 páginas
@@ -348,12 +357,18 @@ KAIROS_CDS/
 
 ### Seguridad y Ciberseguridad
 
-- JWT con expiración configurable
-- RBAC: ADMIN, OPERATOR, DOCTOR, VIEWER
-- Panel de ciberseguridad: eventos de seguridad, sesiones activas, IPs bloqueadas, firewall
-- Rate limiting, detección de brute-force, escaneo de inputs (SQL injection, XSS, path traversal)
-- Protección CSRF, gestión de sesiones, bloqueo/desbloqueo de IPs
-- Herramientas de seguridad: escáner de amenazas, verificador de fortaleza de contraseñas
+- **JWT** con expiración configurable, blacklist JTI y revocación por logout
+- **RBAC**: ADMIN, OPERATOR, DOCTOR, VIEWER con `require_role()` en FastAPI
+- **Panel de ciberseguridad** — eventos, sesiones activas, IPs bloqueadas, security score (0-100)
+- **Rate limiting** configurable por ruta, detección de **brute-force** con lockout por IP
+- **Escaneo de inputs** — SQL injection, XSS, path traversal en query params, URL y body JSON
+- **Protección CSRF**, gestión de sesiones con seguimiento de actividad, bloqueo/desbloqueo de IPs
+- **Alertas en tiempo real** — polling cada 5 s de alertas HIGH/CRITICAL con notificaciones nativas del navegador
+- **Historial de login** con detección de anomalías por usuario
+- **Verificación de contraseñas comprometidas** — integración HIBP k-anonymity (privacy-safe)
+- **Cifrado a nivel de campo** — AES-256-GCM (`EncryptedString`) para campos PII en BD (configurable)
+- **Security headers** — CSP, X-Frame-Options, HSTS, Permissions-Policy, eliminación de fingerprint
+- **Extracción de IP real** — soporte X-Forwarded-For, X-Real-IP, CF-Connecting-IP con `TRUSTED_PROXY_COUNT`
 - Auditoría completa de todas las acciones
 - Blockchain BSV con árboles Merkle para inmutabilidad
 
@@ -454,9 +469,39 @@ El sistema implementa un **registro inmutable de auditoría** usando árboles Me
 
 ---
 
+## Ciberseguridad — Endpoints
+
+| Método   | Endpoint                           | Rol    | Descripción                                             |
+| -------- | ---------------------------------- | ------ | ------------------------------------------------------- |
+| `GET`  | `/api/security/dashboard`        | ADMIN  | Panel completo: stats, score, protecciones, config      |
+| `GET`  | `/api/security/score`            | ADMIN  | Security health score (0-100) con desglose por categoría |
+| `GET`  | `/api/security/alerts/recent`    | ADMIN  | Alertas HIGH/CRITICAL nuevas desde `since_id`          |
+| `GET`  | `/api/security/login-history`    | ADMIN  | Historial de login con detección de anomalías          |
+| `GET`  | `/api/security/events`           | ADMIN  | Eventos de seguridad (filtro por severidad)             |
+| `GET`  | `/api/security/sessions`         | ADMIN  | Sesiones JWT activas                                    |
+| `GET`  | `/api/security/blocked-ips`      | ADMIN  | IPs bloqueadas manualmente                              |
+| `POST` | `/api/security/block-ip`         | ADMIN  | Bloquear IP con motivo                                  |
+| `DELETE`| `/api/security/block-ip/{ip}`   | ADMIN  | Desbloquear IP                                          |
+| `GET`  | `/api/security/csrf-token`       | Auth   | Obtener CSRF token de un solo uso                       |
+| `POST` | `/api/security/scan-input`       | ADMIN  | Escanear texto para detectar amenazas (SQLi/XSS/etc.)  |
+| `POST` | `/api/security/check-password`   | Auth   | Verificar fortaleza + breach check HIBP                |
+
+### Security Score (0-100)
+
+El score se calcula automáticamente en base a 4 categorías:
+
+| Categoría          | Peso | Factores                                          |
+| ------------------ | ---- | -------------------------------------------------- |
+| Protecciones       | 25%  | Rate limiting activo, cifrado de campos           |
+| Actividad reciente | 25%  | Eventos HIGH/CRITICAL en últimas 24 h             |
+| Brute force        | 25%  | IPs bloqueadas, intentos fallidos                 |
+| Rate limiting      | 25%  | Excesos de límite en última hora                  |
+
+---
+
 ## Referencia de API
 
-**131 endpoints** organizados en 21 routers. Documentación interactiva:
+**134 endpoints** organizados en 21 routers. Documentación interactiva:
 
 - **Swagger UI** → http://localhost:5001/docs
 - **ReDoc** → http://localhost:5001/redoc
@@ -482,7 +527,7 @@ El sistema implementa un **registro inmutable de auditoría** usando árboles Me
 | MCI          | `/api/mci`                   | 6         | Triaje START + pre-arrival              |
 | Resources    | `/api/resources`             | 13        | DEA, GIS, weather, agencies, SSM        |
 | Simulation   | `/simulation`                | 8         | Generación + velocidad de simulación |
-| Security     | `/api/security`              | 9         | Ciberseguridad + firewall + tools      |
+| Security     | `/api/security`              | 12        | Ciberseguridad + firewall + tools + alertas + HIBP |
 | Digital Twin | `/digital-twin`              | 4         | Telemetría + what-if                  |
 | Chat         | `/api/chat`                  | 3         | Chat operativo multi-canal             |
 | Live         | `/api/live`, `/api/cities` | 2         | Polling + filtro ciudades               |
@@ -569,13 +614,13 @@ npm test
 | Área            | Archivo                    | Tests | Qué cubre                                           |
 | ---------------- | -------------------------- | ----- | ---------------------------------------------------- |
 | Health           | `test_health.py`         | 1     | `/health` endpoint                                 |
-| Auth             | `test_auth.py`           | 4     | Login, registro, roles                               |
-| Events           | `test_events.py`         | 3     | CRUD incidentes                                      |
-| API              | `test_api.py`            | 3     | Fleet, live data                                     |
-| Live + Audit     | `test_live_and_audit.py` | 3     | `/api/live`, audit logs                            |
+| Auth             | `test_auth.py`           | 10    | Login, registro, roles, token blacklist, brute-force |
+| Events           | `test_events.py`         | 5     | CRUD incidentes, timeline, autenticación            |
+| API              | `test_api.py`            | 10    | Fleet, live data, seed, analytics, métricas         |
+| Live + Audit     | `test_live_and_audit.py` | 4     | `/api/live`, audit logs, export CSV                |
 | Crews            | `test_crews.py`          | 5     | Seed, miembros, turnos, fin de turno                 |
-| Security         | `test_security.py`       | 11    | Dashboard, SQLi, XSS, CSRF, passwords, sesiones     |
-| Operations       | `test_operations.py`     | 8     | Hospitales, flota, analytics, KPIs, ciudades         |
+| Security         | `test_security.py`       | 11    | Dashboard, SQLi, XSS, CSRF, passwords, sesiones, score |
+| Operations       | `test_operations.py`     | 9     | Hospitales, flota, analytics, KPIs, ciudades         |
 | Simulation       | `test_simulation.py`     | 6     | Generación, velocidad, what-if, fleet health         |
 | Blockchain       | `test_blockchain.py`     | 6     | Status, records, Merkle, audit logs                  |
 | ePCR             | `test_epcr.py`           | 5     | MPDS, tracking, pacientes demo                       |
@@ -599,6 +644,18 @@ REDIS_DB=0
 
 # JWT
 SECRET_KEY=tu-clave-secreta-segura-aqui
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Seguridad
+SECURITY_RATE_LIMIT_ENABLED=true          # Activar/desactivar rate limiting
+SECURITY_BRUTE_FORCE_ENABLED=true         # Activar/desactivar detección brute-force
+SECURITY_MAX_LOGIN_ATTEMPTS=5             # Intentos antes de bloqueo
+SECURITY_LOCKOUT_MINUTES=10              # Duración del bloqueo en minutos
+TRUSTED_PROXY_COUNT=0                     # Proxies de confianza (0=conexión directa)
+
+# Cifrado de campos PII (AES-256-GCM, opcional)
+# Generar: python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
+FIELD_ENCRYPTION_KEY=                     # Dejar vacío para modo dev (sin cifrado)
 
 # BSV Blockchain (opcional)
 BSV_PRIVATE_KEY=...

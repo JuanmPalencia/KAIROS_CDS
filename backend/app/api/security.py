@@ -2,7 +2,8 @@
 KAIROS CDS — API de ciberseguridad.
 
 Endpoints para: dashboard de seguridad, sesiones activas, IPs bloqueadas,
-eventos de seguridad, CSRF tokens y status de protecciones.
+eventos de seguridad, CSRF tokens, status de protecciones,
+security score, alerts, login history y breach check.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -29,7 +30,13 @@ from ..core.cybersecurity import (
     BRUTE_FORCE_LOCKOUT,
     BRUTE_FORCE_WINDOW,
     PASSWORD_MIN_LENGTH,
+    compute_security_score,
+    get_recent_alerts,
+    get_login_history,
+    check_password_breach,
+    get_blacklist_size,
 )
+from ..core.encryption import is_encryption_active
 
 import re, math
 
@@ -57,14 +64,17 @@ async def security_dashboard(
 ):
     """Panel principal de ciberseguridad — solo ADMIN."""
     stats = get_security_stats()
+    score = compute_security_score()
     return {
         "status": "protected",
         "stats": stats,
+        "score": score,
         "protections": {
             "security_headers": True,
             "rate_limiting": True,
             "brute_force_detection": True,
             "input_scanning": True,
+            "body_scanning": True,
             "csrf_protection": True,
             "session_management": True,
             "ip_blocking": True,
@@ -74,8 +84,15 @@ async def security_dashboard(
             "xss_scan": True,
             "path_traversal_scan": True,
             "jwt_encryption": "HS256",
+            "jwt_blacklist": True,
             "password_hashing": "bcrypt",
             "audit_blockchain": True,
+            "field_encryption": is_encryption_active(),
+            "hibp_breach_check": True,
+            "login_anomaly_detection": True,
+            "real_ip_extraction": True,
+            "rate_limit_headers": True,
+            "token_blacklist_size": get_blacklist_size(),
         },
         "config": {
             "rate_limits": {k: {"max": v[0], "window_s": v[1]} for k, v in RATE_LIMITS.items()},
@@ -92,6 +109,41 @@ async def security_dashboard(
             },
         },
     }
+
+
+# ── Security Score ─────────────────────────────────────────────────
+
+@router.get("/score")
+async def security_score(
+    current_user: User = Depends(require_role(["ADMIN"]))
+):
+    """Security health score (0-100) with category breakdown."""
+    return compute_security_score()
+
+
+# ── Real-time Alerts ───────────────────────────────────────────────
+
+@router.get("/alerts/recent")
+async def recent_alerts(
+    since_id: int = Query(0, ge=0),
+    current_user: User = Depends(require_role(["ADMIN"]))
+):
+    """Poll for new HIGH/CRITICAL security alerts since last check."""
+    alerts, latest_id = get_recent_alerts(since_id)
+    return {"alerts": alerts, "latest_id": latest_id}
+
+
+# ── Login History & Anomalies ──────────────────────────────────────
+
+@router.get("/login-history")
+async def login_history_endpoint(
+    username: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: User = Depends(require_role(["ADMIN"]))
+):
+    """Login history with anomaly detection records."""
+    history = get_login_history(username=username, limit=limit)
+    return {"history": history, "total": len(history)}
 
 
 # ── Security Events ────────────────────────────────────────────────
@@ -179,14 +231,14 @@ async def scan_input_endpoint(
     }
 
 
-# ── Password strength check ────────────────────────────────────────
+# ── Password strength + breach check ─────────────────────────────
 
 @router.post("/check-password")
 async def check_password_strength(
     body: CheckPasswordBody,
     current_user: User = Depends(get_current_user),
 ):
-    """Verificar fortaleza de una contraseña (sin almacenarla)."""
+    """Verificar fortaleza de una contraseña y si ha sido comprometida (HIBP)."""
     password = body.password
     ok, msg = validate_password(password)
 
@@ -217,9 +269,19 @@ async def check_password_strength(
     if entropy >= 60: level = "fuerte"
     elif entropy >= 40: level = "media"
 
+    # HIBP breach check (k-anonymity, privacy-safe)
+    breached = False
+    breach_count = 0
+    try:
+        breached, breach_count = await check_password_breach(password)
+    except Exception:
+        pass
+
     return {
         "valid": ok,
         "errors": errors,
         "entropy_bits": round(entropy, 1),
         "strength": level,
+        "breached": breached,
+        "breach_count": breach_count,
     }

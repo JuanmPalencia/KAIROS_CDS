@@ -131,3 +131,11 @@ Persona con contractura cervical tras dormir mal mucho dolor al girar,TRAUMA,1,L
 Herida superficial en pie por pisar cristal sangrado mínimo,TRAUMA,1,LOW,TRAUMA,20
 Test incident,CARDIO,1,MEDIUM,,
 Test cardiac incident,CARDIO,2,MEDIUM,,
+Accidente laboral con traumatismo,TRAUMA,2,HIGH,,
+Dificultad respiratoria severa,RESPIRATORY,3,MEDIUM,,
+Posible ictus en domicilio,STROKE,5,CRITICAL,,
+Incendio en edificio residencial,FIRE,6,MEDIUM,,
+Test incident,CARDIO,1,MEDIUM,,
+Test cardiac incident,CARDIO,2,MEDIUM,,
+Test incident,CARDIO,1,MEDIUM,,
+Test cardiac incident,CARDIO,2,MEDIUM,,

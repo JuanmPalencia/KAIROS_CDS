@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from datetime import timedelta, datetime
 
 from ..storage.db import get_db
 from ..storage.models_sql import User
-from ..auth.security import verify_password, get_password_hash, create_access_token
+from ..auth.security import verify_password, get_password_hash, create_access_token, decode_access_token
 from ..auth.dependencies import get_current_user, require_role
 from ..config import ACCESS_TOKEN_EXPIRE_MINUTES
 from ..storage.repos.audit_repo import AuditRepo
@@ -18,6 +18,10 @@ from ..core.cybersecurity import (
     revoke_session,
     validate_password,
     _emit_event,
+    get_real_ip,
+    blacklist_token,
+    record_login_for_anomaly,
+    check_password_breach,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -53,7 +57,7 @@ async def login(
     db: Session = Depends(get_db)
 ):
     """Login endpoint to get access token"""
-    ip = request.client.host if request.client else "0.0.0.0"
+    ip = get_real_ip(request)
 
     # Brute-force lockout check
     locked, remaining = is_brute_force_locked(ip)
@@ -64,7 +68,7 @@ async def login(
         )
 
     user = db.query(User).filter(User.username == form_data.username).first()
-    
+
     if not user or not verify_password(form_data.password, user.hashed_password):
         record_login_failure(ip, form_data.username)
         _emit_event("LOGIN_FAILURE", "MEDIUM", ip, f"Login fallido para user '{form_data.username}'")
@@ -73,27 +77,42 @@ async def login(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-    
+
     # Success — clear brute-force record
     record_login_success(ip)
-    
+
     # Update last login
     user.last_login = datetime.utcnow()
     db.commit()
-    
+
     # Create access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username, "role": user.role},
         expires_delta=access_token_expires
     )
-    
+
     # Register active session
     register_session(access_token, user.username, ip)
-    
+
+    # Anomaly detection
+    anomalies = record_login_for_anomaly(user.username, ip)
+
+    # Async HIBP breach check (non-blocking, just emits event if breached)
+    try:
+        breached, breach_count = await check_password_breach(form_data.password)
+        if breached:
+            _emit_event(
+                "PASSWORD_BREACH", "HIGH", ip,
+                f"User '{user.username}' uses a password found in {breach_count:,} data breaches (HIBP)",
+                user=user.username,
+            )
+    except Exception:
+        pass  # Fail open — don't block login if HIBP is down
+
     # Audit log
     AuditRepo.log(
         db=db,
@@ -103,7 +122,7 @@ async def login(
         ip_address=ip,
     )
     _emit_event("LOGIN_SUCCESS", "LOW", ip, f"Login exitoso: {user.username} ({user.role})")
-    
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -115,6 +134,34 @@ async def login(
             "role": user.role
         }
     }
+
+
+@router.post("/logout")
+async def logout(request: Request):
+    """Revoke the current JWT token (real server-side logout)."""
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing token")
+
+    token = auth_header[7:]
+    payload = decode_access_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    jti = payload.get("jti")
+    exp = payload.get("exp", 0)
+    username = payload.get("sub", "unknown")
+
+    if jti:
+        blacklist_token(jti, float(exp))
+
+    # Also remove from active sessions
+    revoke_session(token)
+
+    ip = get_real_ip(request)
+    _emit_event("LOGOUT", "LOW", ip, f"User '{username}' logged out (token revoked)")
+
+    return {"ok": True, "detail": "Token revoked successfully"}
 
 
 @router.post("/register", response_model=UserResponse)
