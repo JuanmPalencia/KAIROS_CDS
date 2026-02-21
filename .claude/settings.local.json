@@ -42,7 +42,26 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(npm run lint:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImV4cCI6MTc3MTYwNzcwMywiaWF0IjoxNzcxNjA1OTAzLCJqdGkiOiI2Yzc0OTFlZi0xMTI5LTQ1YmItODM3MS1lZTMxNTUyNjdkMWUifQ.sw-DG8VoQaaJmUHHRnzvycNlJxPGqaUTHa6thDVuhS4\")",
+      "Bash(__NEW_LINE_1ce9322a53c8f719__ echo \"=== 3. Sembrando hospitales ===\")",
+      "Bash(__NEW_LINE_a9f0bd6ed83ef258__ echo \"=== 4. Sembrando recursos \\(DEA, GIS, weather, agencias, SSM\\) ===\")",
+      "Bash(__NEW_LINE_e0e1224d87dc25e2__ echo \"=== 5. Sembrando gasolineras ===\")",
+      "Bash(__NEW_LINE_2a360f118cf27f9a__ echo \"=== 6. Sembrando tripulaciones ===\")",
+      "Bash(__NEW_LINE_d7cd47a3259d6fd6__ echo \"=== 3. Sembrando hospitales ===\")",
+      "Bash(__NEW_LINE_3df7fe6f16b3a836__ echo \"=== 4. Sembrando recursos \\(DEA, GIS, weather, agencias, SSM\\) ===\")",
+      "Bash(__NEW_LINE_e75821cad91ecd16__ echo \"=== 5. Sembrando gasolineras ===\")",
+      "Bash(__NEW_LINE_eebaa75d756b2f28__ echo \"=== 6. Sembrando tripulaciones ===\")",
+      "Bash(__NEW_LINE_93eb123e7b76233b__ echo \"=== 7. Iniciando auto-generación de incidentes ===\")",
+      "Bash(__NEW_LINE_93eb123e7b76233b__ echo \"=== 8. Verificando estado de la flota ===\")",
+      "Bash(__NEW_LINE_ecd52d611e1bb4e5__ echo \"=== 9. Verificando usuarios creados ===\")",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImV4cCI6MTc3MTYwNzcwMywiaWF0IjoxNzcxNjA1OTAzLCJqdGkiOiI2Yzc0OTFlZi0xMTI5LTQ1YmItODM3MS1lZTMxNTUyNjdkMWUifQ.sw-DG8VoQaaJmUHHRnzvycNlJxPGqaUTHa6thDVuhS4\" echo \"=== RESUMEN DE INICIALIZACIÓN ===\" echo \"\" echo \"✅ 1. Usuarios creados:\" curl -s http://localhost:5001/api/live?city=Madrid -H \"Authorization: Bearer $TOKEN\")",
+      "Bash(echo \" - admin, operator, doctor, viewer\" echo \"\" echo \"✅ 2. Flota de ambulancias \\(8 vehículos\\):\" curl -s http://localhost:5001/api/live?city=Madrid -H \"Authorization: Bearer $TOKEN\")",
+      "Bash(python3:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(echo:*)",
+      "Bash(chmod:*)"
     ]
   }
 }

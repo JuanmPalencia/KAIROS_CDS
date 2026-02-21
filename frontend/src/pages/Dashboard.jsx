@@ -115,8 +115,9 @@ export default function Dashboard() {
   const [incidentTimeline, setIncidentTimeline] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [focusedVehicleId, setFocusedVehicleId] = useState(null);
-  const [subtypeFilter, setSubtypeFilter] = useState("ALL");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  // Restore filters from localStorage on mount
+  const [subtypeFilter, setSubtypeFilter] = useState(() => localStorage.getItem("subtypeFilter") || "ALL");
+  const [statusFilter, setStatusFilter] = useState(() => localStorage.getItem("statusFilter") || "ALL");
   const [emergencyAlert, setEmergencyAlert] = useState(null); // {type:'FIREFIGHTERS'|'POLICE', incident}
   const [aiAutoSuggestions, setAiAutoSuggestions] = useState([]); // [{incidentId, suggestion}]
   const [overrideMode, setOverrideMode] = useState(false);
@@ -176,6 +177,15 @@ export default function Dashboard() {
     fetchHospitals();
     fetchResourceLayers();
   }, []);
+
+  // Save filters to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("subtypeFilter", subtypeFilter);
+  }, [subtypeFilter]);
+
+  useEffect(() => {
+    localStorage.setItem("statusFilter", statusFilter);
+  }, [statusFilter]);
 
   const fetchResourceLayers = async () => {
     const headers = { Authorization: `Bearer ${localStorage.getItem("token")}` };
@@ -368,11 +378,8 @@ export default function Dashboard() {
     const map = L.map("map").setView([40.4168, -3.7038], 12);
     mapRef.current = map;
 
-    setTimeout(() => {
-      try {
-        map.invalidateSize();
-      } catch { /* ignored */ }
-    }, 200);
+    // Ensure map renders correctly (optimized, without flicker)
+    map.invalidateSize(false);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap contributors",
@@ -517,9 +524,9 @@ export default function Dashboard() {
                 radius,
                 color,
                 fillColor: color,
-                fillOpacity: 0.06,
-                weight: 1.5,
-                opacity: 0.35,
+                fillOpacity: 0.12,
+                weight: 2,
+                opacity: 0.5,
                 dashArray: '6, 4',
               }).addTo(layerRef.current);
               coverageCirclesRef.current.set(v.id, cCircle);
@@ -778,8 +785,9 @@ export default function Dashboard() {
     // Initial fetch
     updateData();
     
-    // Poll every 3 seconds
-    pollInterval = setInterval(updateData, 3000);
+    // Initial update immediately, then poll every 10 seconds for stable updates (prevents flickering)
+    updateData();
+    pollInterval = setInterval(updateData, 10000);
 
     // Make function available globally for popup buttons
     window.selectIncidentFromMap = (incidentId) => {
