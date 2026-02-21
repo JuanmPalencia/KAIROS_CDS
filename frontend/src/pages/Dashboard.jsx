@@ -515,7 +515,7 @@ export default function Dashboard() {
 
         if (showCoverage) {
           for (const v of vehicles) {
-            if (v.status === 'IDLE') {
+            if (v.status === 'IDLE' || v.status === 'AVAILABLE') {
               const subtypeRadius = { SVA: 3500, SVB: 3000, VIR: 4500, VAMM: 2500, SAMU: 3000 };
               const radius = subtypeRadius[v.subtype] || 3000;
               const subtypeColor = { SVA: '#ef4444', SVB: '#22c55e', VIR: '#3b82f6', VAMM: '#f97316', SAMU: '#a855f7' };
@@ -757,7 +757,7 @@ export default function Dashboard() {
 
         // Update heatmap layer
         if (heatLayerRef.current) {
-          map.removeLayer(heatLayerRef.current);
+          mapRef.current.removeLayer(heatLayerRef.current);
           heatLayerRef.current = null;
         }
         const heatPoints = incidentsData
@@ -801,10 +801,10 @@ export default function Dashboard() {
       stopped = true;
       if (pollInterval) clearInterval(pollInterval);
       try {
-        map.remove();
+        mapRef.current.remove();
       } catch { /* ignored */ }
     };
-  }, [focusedVehicleId, fetchWeather, onMapMouseMove, showCoverage, token, user?.role, incidents]);
+  }, [focusedVehicleId, fetchWeather, onMapMouseMove, showCoverage, token, user?.role]);
 
   // Toggle heatmap on/off
   useEffect(() => {
