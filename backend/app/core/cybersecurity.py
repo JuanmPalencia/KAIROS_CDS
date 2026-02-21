@@ -68,6 +68,7 @@ RATE_LIMITS = {
     "/api/auth/login":    (5,  60),    # 5 intentos por minuto
     "/api/auth/register": (3,  60),    # 3 por minuto
     "/api/auth/init-admin":(2, 300),   # 2 en 5 min
+    "/api/live":          (9999, 60),  # Excluido: polling del Dashboard (sin límite efectivo)
     "DEFAULT":            (120, 60),   # 120 req/min general
 }
 
