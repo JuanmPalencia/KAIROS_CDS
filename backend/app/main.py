@@ -157,9 +157,9 @@ def get_cities(db: Session = Depends(get_db)):
 @app.get("/api/live")
 def get_live_data(city: str = None, db: Session = Depends(get_db)):
     """Get current live data (vehicles, incidents, metrics) for polling"""
-    from .storage.models_sql import Vehicle, IncidentSQL, GasStation, WeatherCondition, DEALocation, AgencyResource
+    from .storage.models_sql import Vehicle, IncidentSQL, GasStation, WeatherCondition, DEALocation, AgencyResource, Hospital
     import json as _json
-    
+
     try:
         vehicles = db.query(Vehicle).all()
         inc_query = db.query(IncidentSQL).filter(IncidentSQL.status != "RESOLVED")
@@ -167,6 +167,7 @@ def get_live_data(city: str = None, db: Session = Depends(get_db)):
             inc_query = inc_query.filter(IncidentSQL.city == city)
         incidents = inc_query.all()
         gas_stations = db.query(GasStation).filter(GasStation.is_open == True).all()
+        hospitals = db.query(Hospital).filter(Hospital.available == True).all()
 
         # Build vehicle route_progress lookup for incident enrichment
         vehicle_progress_map = {v.id: v.route_progress for v in vehicles}
@@ -254,9 +255,23 @@ def get_live_data(city: str = None, db: Session = Depends(get_db)):
                 }
                 for gs in gas_stations
             ],
+            "hospitals": [
+                {
+                    "id": h.id,
+                    "name": h.name,
+                    "lat": h.lat,
+                    "lon": h.lon,
+                    "capacity": h.capacity,
+                    "current_load": h.current_load,
+                    "availability_pct": round((1 - h.current_load / h.capacity) * 100, 1) if h.capacity else 100,
+                    "emergency_level": h.emergency_level,
+                    "specialties": _json.loads(h.specialties) if h.specialties else [],
+                }
+                for h in hospitals
+            ],
             "weather": weather_data,
         }
-        
+
         return payload
     except Exception as e:
         logger.error(f"ERROR in /api/live: {e}", exc_info=True)

@@ -403,15 +403,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return response
 
-        # Standard security headers
+        # Standard security headers - comprehensive protection
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(self)"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
         response.headers["Pragma"] = "no-cache"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.jsdelivr.net; "
@@ -419,14 +421,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com https://fastapi.tiangolo.com; "
             "connect-src 'self' ws: wss: http://localhost:* http://127.0.0.1:* https://api.openai.com; "
-            "frame-ancestors 'none'"
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'"
         )
 
-        # Remove server fingerprint
-        if "server" in response.headers:
-            del response.headers["server"]
-        if "X-Powered-By" in response.headers:
-            del response.headers["X-Powered-By"]
+        # Remove server fingerprint headers
+        response.headers.pop("server", None)
+        response.headers.pop("X-Powered-By", None)
+        response.headers.pop("Server", None)
 
         return response
 

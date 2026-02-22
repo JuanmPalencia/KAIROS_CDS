@@ -281,6 +281,11 @@ class TwinEngine:
                                 arrived_at_hospital = True
 
                         if arrived_at_hospital:
+                            # Increment hospital load on arrival
+                            if inc.assigned_hospital_id:
+                                hosp = db.query(Hospital).get(inc.assigned_hospital_id)
+                                if hosp:
+                                    hosp.current_load = min(hosp.capacity, hosp.current_load + (inc.affected_count or 1))
                             self._resolve_incident(db, inc, v)
 
                 db.commit()

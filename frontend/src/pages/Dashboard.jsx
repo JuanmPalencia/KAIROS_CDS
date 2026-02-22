@@ -432,6 +432,11 @@ export default function Dashboard() {
 
         if (data.fleet_metrics) setFleetMetrics(data.fleet_metrics);
 
+        // Update hospitals from live data
+        if (data.hospitals && Array.isArray(data.hospitals)) {
+          setHospitals(data.hospitals);
+        }
+
         // Update vehicles
         const vehicles = data.vehicles || [];
         setVehicles(vehicles);
@@ -831,18 +836,40 @@ export default function Dashboard() {
     }
   }, [showRoutes, incidents]);
 
-  // Toggle coverage visibility without recreating map
+  // Toggle coverage visibility - remove old circles and update
   useEffect(() => {
     if (!layerRef.current) return;
 
-    for (const [, circle] of coverageCirclesRef.current.entries()) {
-      if (showCoverage) {
-        circle.setStyle({ opacity: 0.35, fillOpacity: 0.08 });
-      } else {
-        circle.setStyle({ opacity: 0, fillOpacity: 0 });
+    // Remove all old coverage circles
+    for (const [, circ] of coverageCirclesRef.current.entries()) {
+      layerRef.current.removeLayer(circ);
+    }
+    coverageCirclesRef.current.clear();
+
+    // If coverage is enabled, recreate circles for active vehicles (exclude REFUELING/disabled)
+    if (showCoverage && vehicles.length > 0) {
+      for (const v of vehicles) {
+        if (v.enabled && v.status !== 'REFUELING') {
+          const subtypeRadius = { SVA: 3500, SVB: 3000, VIR: 4500, VAMM: 2500, SAMU: 3000 };
+          const radius = subtypeRadius[v.subtype] || 3000;
+          const subtypeColor = { SVA: '#ef4444', SVB: '#22c55e', VIR: '#3b82f6', VAMM: '#f97316', SAMU: '#a855f7' };
+          const color = subtypeColor[v.subtype] || '#22c55e';
+          const cCircle = L.circle([v.lat, v.lon], {
+            radius,
+            color,
+            fillColor: color,
+            fillOpacity: 0.08,
+            weight: 1.5,
+            opacity: 0.35,
+            dashArray: '6, 4',
+            interactive: false,
+            pane: 'shadowPane',
+          }).addTo(layerRef.current);
+          coverageCirclesRef.current.set(v.id, cCircle);
+        }
       }
     }
-  }, [showCoverage]);
+  }, [showCoverage, vehicles]);
 
   // Fetch incident timeline
   const fetchTimeline = async (incidentId) => {
@@ -872,8 +899,14 @@ export default function Dashboard() {
 
     // Add hospital markers
     for (const hospital of hospitals) {
+      // Determine icon color based on occupancy
+      const occupancyPct = hospital.capacity > 0 ? Math.round((hospital.current_load / hospital.capacity) * 100) : 0;
+      let iconColor = "#22c55e"; // green < 60%
+      if (occupancyPct >= 85) iconColor = "#ef4444"; // red >= 85%
+      else if (occupancyPct >= 60) iconColor = "#f59e0b"; // orange >= 60%
+
       const hospIcon = L.divIcon({
-        html: hospitalSvg(38),
+        html: hospitalSvg(38, iconColor),
         className: "hospital-marker",
         iconSize: [38, 38],
         iconAnchor: [19, 19],
@@ -883,7 +916,9 @@ export default function Dashboard() {
         icon: hospIcon,
       }).addTo(layerRef.current);
 
-      const loadPct = hospital.capacity > 0 ? Math.round(((hospital.capacity - hospital.current_load) / hospital.capacity) * 100) : 0;
+      const availabilityPct = hospital.availability_pct ?? (hospital.capacity > 0 ? Math.round(((hospital.capacity - hospital.current_load) / hospital.capacity) * 100) : 100);
+      const occupancyColorBar = occupancyPct < 60 ? '#22c55e' : occupancyPct < 85 ? '#f59e0b' : '#ef4444';
+
       const popup = `
         <div class="map-popup">
           <div class="popup-header hospital-popup">
@@ -892,10 +927,11 @@ export default function Dashboard() {
           <div class="popup-body">
             <div class="popup-row"><span class="popup-label">Dirección</span><span>${hospital.address || "N/A"}</span></div>
             <div class="popup-row"><span class="popup-label">Ocupación</span>
-              <span class="fuel-bar-mini"><span class="fuel-fill" style="width:${100 - loadPct}%;background:${loadPct < 30 ? '#ef4444' : loadPct < 60 ? '#f59e0b' : '#22c55e'}"></span></span>
-              <span>${hospital.current_load}/${hospital.capacity}</span>
+              <span class="fuel-bar-mini"><span class="fuel-fill" style="width:${occupancyPct}%;background:${occupancyColorBar}"></span></span>
+              <span>${hospital.current_load}/${hospital.capacity} (${occupancyPct}%)</span>
             </div>
-            <div class="popup-row"><span class="popup-label">Nivel UCE</span><span>${'★'.repeat(hospital.emergency_level)}${'☆'.repeat(3 - hospital.emergency_level)}</span></div>
+            <div class="popup-row"><span class="popup-label">Disponibilidad</span><span style="color:${availabilityPct > 40 ? '#22c55e' : availabilityPct > 15 ? '#f59e0b' : '#ef4444'}">${availabilityPct}%</span></div>
+            <div class="popup-row"><span class="popup-label">Nivel UCE</span><span>${'★'.repeat(hospital.emergency_level || 1)}${'☆'.repeat(3 - (hospital.emergency_level || 1))}</span></div>
             <div class="popup-row"><span class="popup-label">Especialidades</span><span>${(hospital.specialties || []).join(", ") || "General"}</span></div>
           </div>
         </div>

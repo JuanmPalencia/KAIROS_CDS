@@ -22,6 +22,7 @@ import {
   XCircle,
   History,
   Fingerprint,
+  BarChart3,
 } from "lucide-react";
 import "../styles/SecurityDashboard.css";
 import { API_BASE } from "../config";
@@ -67,6 +68,8 @@ export default function SecurityDashboard() {
   const [sevFilter, setSevFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("overview");
+  const [headersAnalysis, setHeadersAnalysis] = useState(null);
+  const [loadingHeaders, setLoadingHeaders] = useState(false);
 
   const fetchAll = useCallback(async () => {
     const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
@@ -92,7 +95,7 @@ export default function SecurityDashboard() {
 
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
-  useEffect(() => { fetchAll(); const t = setInterval(fetchAll, 15000); return () => clearInterval(t); }, [fetchAll]);
+  useEffect(() => { fetchAll(); const t = setInterval(fetchAll, 5000); return () => clearInterval(t); }, [fetchAll]);
 
   /* ── Actions ── */
   const handleScan = async () => {
@@ -127,6 +130,15 @@ export default function SecurityDashboard() {
   const handleUnblock = async (ip) => {
     await fetch(`${API}/api/security/block-ip/${ip}`, { method: "DELETE", headers });
     fetchAll();
+  };
+
+  const handleHeadersAnalysis = async () => {
+    setLoadingHeaders(true);
+    try {
+      const r = await fetch(`${API}/api/security/headers-analysis`, { headers });
+      if (r.ok) setHeadersAnalysis(await r.json());
+    } catch (e) { console.error("Headers analysis error:", e); }
+    finally { setLoadingHeaders(false); }
   };
 
   if (loading) return <div className="sec-loading"><RefreshCw className="spin" size={32} /> Cargando panel de seguridad...</div>;
@@ -216,16 +228,30 @@ export default function SecurityDashboard() {
       {/* ═══════ EVENTS ═══════ */}
       {tab === "events" && (
         <div className="sec-events-tab">
-          <div className="sec-events-toolbar">
-            <label>Severidad:</label>
-            <select value={sevFilter} onChange={(e) => setSevFilter(e.target.value)}>
-              <option value="">Todas</option>
-              {["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"].map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+          <div className="sec-card">
+            <h3><BarChart3 size={18} /> Linea de Tiempo de Eventos</h3>
+            {events.length > 0 ? (
+              <ThreatTimeline events={events} />
+            ) : (
+              <div style={{ textAlign: "center", padding: "20px", color: "#64748b" }}>
+                Sin eventos en las ultimas 24 horas
+              </div>
+            )}
           </div>
-          <EventTable events={events} />
+
+          <div className="sec-card" style={{ marginTop: "16px" }}>
+            <h3><Activity size={18} /> Lista de Eventos</h3>
+            <div className="sec-events-toolbar">
+              <label>Severidad:</label>
+              <select value={sevFilter} onChange={(e) => setSevFilter(e.target.value)}>
+                <option value="">Todas</option>
+                {["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"].map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <EventTable events={events} />
+          </div>
         </div>
       )}
 
@@ -373,8 +399,14 @@ export default function SecurityDashboard() {
               <div className={`sec-scan-result ${scanResult.threats_found ? "danger" : "safe"}`}>
                 {scanResult.threats_found ? (
                   <>
-                    <XCircle size={18} /> <strong>Amenaza detectada:</strong>{" "}
-                    {scanResult.threats.map((t2) => t2.type).join(", ")}
+                    <XCircle size={18} /> <strong>Amenaza detectada:</strong>
+                    <div style={{ marginTop: "8px" }}>
+                      {scanResult.threats.map((t2, i) => (
+                        <div key={i} style={{ marginBottom: "6px", paddingLeft: "8px", borderLeft: "3px solid #ef4444" }}>
+                          <strong>{t2.type}</strong>: {t2.detail}
+                        </div>
+                      ))}
+                    </div>
                   </>
                 ) : (
                   <><CheckCircle2 size={18} /> Texto seguro — sin amenazas detectadas</>
@@ -408,7 +440,19 @@ export default function SecurityDashboard() {
                   <strong>{passwordResult.valid ? "Contrasena valida" : "Contrasena invalida"}</strong>
                 </div>
                 <div className="pwd-details">
-                  <span>Fortaleza: <strong>{passwordResult.strength}</strong></span>
+                  <div style={{ marginBottom: "8px" }}>
+                    <span>Fortaleza: <strong>{passwordResult.strength}</strong></span>
+                    <div style={{ height: "8px", background: "#e2e8f0", borderRadius: "4px", marginTop: "4px", overflow: "hidden" }}>
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${(passwordResult.entropy_bits / 128) * 100}%`,
+                          background: passwordResult.strength === "fuerte" ? "#22c55e" : passwordResult.strength === "media" ? "#eab308" : "#ef4444",
+                          transition: "width 0.3s ease",
+                        }}
+                      />
+                    </div>
+                  </div>
                   <span>Entropia: <strong>{passwordResult.entropy_bits?.toFixed(1)} bits</strong></span>
                 </div>
                 {passwordResult.breached && (
@@ -431,6 +475,77 @@ export default function SecurityDashboard() {
                     {passwordResult.errors.map((e, i) => <li key={i}>{e}</li>)}
                   </ul>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* HTTP Headers Security Analysis */}
+          <div className="sec-card">
+            <h3><Shield size={18} /> Analizador de Headers de Seguridad HTTP</h3>
+            <p className="sec-desc">Analiza los headers de seguridad del servidor y verifica que esten correctamente configurados para prevenir ataques comunes.</p>
+            <div className="sec-tool-form">
+              <button
+                onClick={handleHeadersAnalysis}
+                disabled={loadingHeaders}
+                style={{ flex: 1 }}
+              >
+                {loadingHeaders ? "Analizando..." : "Analizar Headers"} <Shield size={14} />
+              </button>
+            </div>
+            {headersAnalysis && (
+              <div className="headers-analysis-result">
+                <div style={{ marginBottom: "16px", padding: "12px", background: "#f0f9ff", borderLeft: "4px solid #3b82f6", borderRadius: "4px" }}>
+                  <strong>Puntuacion de Seguridad: {headersAnalysis.security_score}/100</strong>
+                  <span style={{ marginLeft: "12px", padding: "4px 8px", background: GRADE_COLORS[headersAnalysis.grade], color: "white", borderRadius: "3px", fontWeight: "bold", fontSize: "0.9rem" }}>
+                    Grado {headersAnalysis.grade}
+                  </span>
+                </div>
+                <table className="sec-table" style={{ marginTop: "12px" }}>
+                  <thead>
+                    <tr>
+                      <th>Header</th>
+                      <th>Estado</th>
+                      <th>Valor</th>
+                      <th>Descripcion</th>
+                      <th>Importancia</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {headersAnalysis.headers_analysis?.map((h, i) => (
+                      <tr key={i} style={{ background: !h.present ? "#fef2f2" : "transparent" }}>
+                        <td style={{ fontWeight: 600 }}>{h.header}</td>
+                        <td style={{ textAlign: "center" }}>{h.status}</td>
+                        <td><code style={{ fontSize: "0.85rem" }}>{h.value?.slice(0, 50)}...</code></td>
+                        <td style={{ fontSize: "0.9rem" }}>{h.description}</td>
+                        <td>
+                          <span style={{
+                            padding: "2px 6px",
+                            borderRadius: "3px",
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            background: h.importance === "CRITICAL" ? "#fee2e2" : h.importance === "HIGH" ? "#fef3c7" : "#e0f2fe",
+                            color: h.importance === "CRITICAL" ? "#991b1b" : h.importance === "HIGH" ? "#92400e" : "#0c4a6e",
+                          }}>
+                            {h.importance}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Threat Timeline */}
+          <div className="sec-card">
+            <h3><AlertTriangle size={18} /> Linea de Tiempo de Eventos (Últimas 24h)</h3>
+            <p className="sec-desc">Distribucion horaria de eventos de seguridad agrupados por severidad.</p>
+            {events.length > 0 ? (
+              <ThreatTimeline events={events} />
+            ) : (
+              <div style={{ textAlign: "center", padding: "20px", color: "#64748b" }}>
+                Sin eventos en las ultimas 24 horas
               </div>
             )}
           </div>
@@ -580,6 +695,71 @@ function EventTable({ events }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function ThreatTimeline({ events }) {
+  // Group events by hour (last 24h)
+  const now = new Date();
+  const hourlyData = {};
+
+  for (let i = 0; i < 24; i++) {
+    const hour = new Date(now);
+    hour.setHours(hour.getHours() - i);
+    const hourKey = hour.toISOString().slice(0, 13) + ":00";
+    hourlyData[hourKey] = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+  }
+
+  events.forEach(ev => {
+    const evTime = new Date(ev.timestamp);
+    const hourKey = evTime.toISOString().slice(0, 13) + ":00";
+    if (hourlyData[hourKey]) {
+      const sev = ev.severity?.toLowerCase() || "info";
+      if (hourlyData[hourKey][sev] !== undefined) {
+        hourlyData[hourKey][sev]++;
+      }
+    }
+  });
+
+  const hours = Object.entries(hourlyData).reverse().slice(0, 24);
+  const maxCount = Math.max(...hours.map(([, d]) => d.critical + d.high + d.medium + d.low + d.info), 1);
+
+  return (
+    <div style={{ marginTop: "16px" }}>
+      <div style={{ display: "grid", gap: "8px" }}>
+        {hours.map(([hour, data]) => {
+          const total = data.critical + data.high + data.medium + data.low + data.info;
+          const percentage = (total / maxCount) * 100;
+          return (
+            <div key={hour} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ minWidth: "60px", fontSize: "0.85rem", color: "#64748b" }}>
+                {new Date(hour).toLocaleString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+              <div style={{ flex: 1, height: "24px", background: "#f1f5f9", borderRadius: "4px", overflow: "hidden", display: "flex" }}>
+                {data.critical > 0 && (
+                  <div style={{ height: "100%", width: `${(data.critical / total) * percentage}%`, background: "#ef4444" }} title={`Critical: ${data.critical}`} />
+                )}
+                {data.high > 0 && (
+                  <div style={{ height: "100%", width: `${(data.high / total) * percentage}%`, background: "#f97316" }} title={`High: ${data.high}`} />
+                )}
+                {data.medium > 0 && (
+                  <div style={{ height: "100%", width: `${(data.medium / total) * percentage}%`, background: "#eab308" }} title={`Medium: ${data.medium}`} />
+                )}
+                {data.low > 0 && (
+                  <div style={{ height: "100%", width: `${(data.low / total) * percentage}%`, background: "#22c55e" }} title={`Low: ${data.low}`} />
+                )}
+                {data.info > 0 && (
+                  <div style={{ height: "100%", width: `${(data.info / total) * percentage}%`, background: "#6b7280" }} title={`Info: ${data.info}`} />
+                )}
+              </div>
+              <span style={{ minWidth: "30px", textAlign: "right", fontSize: "0.85rem", fontWeight: 600, color: "#334155" }}>
+                {total}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
