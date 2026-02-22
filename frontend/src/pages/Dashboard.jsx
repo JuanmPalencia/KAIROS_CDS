@@ -805,7 +805,7 @@ export default function Dashboard() {
         map.remove();
       } catch { /* ignored */ }
     };
-  }, [focusedVehicleId, fetchWeather, onMapMouseMove, showCoverage, token, user?.role, incidents]);
+  }, [focusedVehicleId, fetchWeather, onMapMouseMove, token, user?.role, incidents]);
 
   // Toggle heatmap on/off
   useEffect(() => {
@@ -830,6 +830,19 @@ export default function Dashboard() {
       });
     }
   }, [showRoutes, incidents]);
+
+  // Toggle coverage visibility without recreating map
+  useEffect(() => {
+    if (!layerRef.current) return;
+
+    for (const [, circle] of coverageCirclesRef.current.entries()) {
+      if (showCoverage) {
+        circle.setStyle({ opacity: 0.35, fillOpacity: 0.08 });
+      } else {
+        circle.setStyle({ opacity: 0, fillOpacity: 0 });
+      }
+    }
+  }, [showCoverage]);
 
   // Fetch incident timeline
   const fetchTimeline = async (incidentId) => {
