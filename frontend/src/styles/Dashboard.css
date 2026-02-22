@@ -844,7 +844,7 @@
 /* Weather widget */
 .weather-widget {
   position: absolute;
-  bottom: 70px;
+  bottom: 20px;
   right: 16px;
   z-index: 1000;
   display: flex;
