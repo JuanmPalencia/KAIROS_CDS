@@ -160,6 +160,16 @@
   padding: 8px 12px; background: var(--card-inner, #f8fafc); border-radius: 8px;
 }
 
+[data-theme="dark"] .para-filters { background: #1e293b; border-color: #334155; }
+[data-theme="dark"] .para-search-wrap { background: #0f172a; border-color: #334155; }
+[data-theme="dark"] .para-search { color: #f1f5f9; }
+[data-theme="dark"] .para-search::placeholder { color: #64748b; }
+[data-theme="dark"] .para-search-clear { color: #64748b; }
+[data-theme="dark"] .para-search-clear:hover { color: #94a3b8; }
+[data-theme="dark"] .para-filter-select { background: #0f172a; border-color: #334155; color: #f1f5f9; }
+[data-theme="dark"] .para-filter-select option { background: #1e293b; color: #f1f5f9; }
+[data-theme="dark"] .para-clear-btn { background: #7f1d1d; color: #fca5a5; }
+[data-theme="dark"] .para-clear-btn:hover { background: #991b1b; color: #fecaca; }
 [data-theme="dark"] .para-panel { background: #1e293b; color: #e2e8f0; }
 [data-theme="dark"] .vehicle-selector { background: #1e293b; }
 [data-theme="dark"] .vital-input input { background: #0f172a; border-color: #334155; color: #f1f5f9; }

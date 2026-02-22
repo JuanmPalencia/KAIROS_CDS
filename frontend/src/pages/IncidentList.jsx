@@ -7,6 +7,30 @@ import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../config";
 import "../styles/IncidentList.css";
 
+// Helper function to format relative time properly
+const formatRelativeTime = (dateStr) => {
+  if (!dateStr) return "Hace un momento";
+
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Ahora mismo";
+  if (diffMins < 60) return `hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+  if (diffHours < 24) return `hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+  if (diffDays < 7) return `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+
+  return date.toLocaleString("es-ES", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+};
+
 const STATUS_COLORS = {
   OPEN: "#f59e0b",
   ASSIGNED: "#3b82f6",
@@ -221,14 +245,7 @@ export default function IncidentList() {
               </div>
 
               <div className="card-footer">
-                <small>
-                  {incident.created_at
-                    ? formatDistanceToNow(new Date(incident.created_at), {
-                        addSuffix: true,
-                        locale: es,
-                      })
-                    : "Hace un momento"}
-                </small>
+                <small>{formatRelativeTime(incident.created_at)}</small>
               </div>
             </Link>
           ))

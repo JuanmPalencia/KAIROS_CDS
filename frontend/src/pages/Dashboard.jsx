@@ -524,10 +524,12 @@ export default function Dashboard() {
                 radius,
                 color,
                 fillColor: color,
-                fillOpacity: 0.12,
-                weight: 2,
-                opacity: 0.5,
+                fillOpacity: 0.08,
+                weight: 1.5,
+                opacity: 0.35,
                 dashArray: '6, 4',
+                interactive: false, // Don't intercept mouse events
+                pane: 'shadowPane', // Place coverage behind other elements
               }).addTo(layerRef.current);
               coverageCirclesRef.current.set(v.id, cCircle);
             }
@@ -784,10 +786,9 @@ export default function Dashboard() {
 
     // Initial fetch
     updateData();
-    
-    // Initial update immediately, then poll every 10 seconds for stable updates (prevents flickering)
-    updateData();
-    pollInterval = setInterval(updateData, 10000);
+
+    // Poll every 15 seconds for stable updates (prevents flickering and excessive reloading)
+    pollInterval = setInterval(updateData, 15000);
 
     // Make function available globally for popup buttons
     window.selectIncidentFromMap = (incidentId) => {
