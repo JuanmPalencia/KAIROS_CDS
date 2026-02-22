@@ -805,7 +805,7 @@ export default function Dashboard() {
         map.remove();
       } catch { /* ignored */ }
     };
-  }, [focusedVehicleId, fetchWeather, onMapMouseMove, token, user?.role, incidents]);
+  }, [focusedVehicleId, fetchWeather, onMapMouseMove, token, user?.role]);
 
   // Toggle heatmap on/off
   useEffect(() => {
