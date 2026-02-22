@@ -356,11 +356,14 @@ export default function SecurityDashboard() {
         <div className="sec-tools-tab">
           {/* Input scanner */}
           <div className="sec-card">
-            <h3><Search size={18} /> Escaner de Amenazas</h3>
-            <p className="sec-desc">Analiza un texto en busca de inyecciones SQL, XSS y path traversal.</p>
+            <h3><Search size={18} /> Escaner de Amenazas Web</h3>
+            <p className="sec-desc">Detecta patrones de ataque en entradas de usuario: SQL injection, XSS, path traversal, command injection.</p>
+            <div className="sec-tool-hint">
+              <small>💡 Ejemplo: <code>'; DROP TABLE users; --</code> (SQL injection)</small>
+            </div>
             <div className="sec-tool-form">
               <input
-                placeholder="Ingresa texto a analizar..."
+                placeholder="Ej: texto, URL, SQL, comando de entrada de usuario..."
                 value={scanInput}
                 onChange={(e) => setScanInput(e.target.value)}
               />
@@ -382,14 +385,17 @@ export default function SecurityDashboard() {
 
           {/* Password checker + HIBP breach */}
           <div className="sec-card">
-            <h3><Key size={18} /> Verificador de Contrasenas + Breach Check</h3>
+            <h3><Key size={18} /> Analizador de Contraseñas + Breach Check</h3>
             <p className="sec-desc">
-              Evalua la fortaleza y verifica si la contrasena ha aparecido en filtraciones de datos (HIBP k-anonymity, 100% privado).
+              Evalúa la fortaleza de contraseña y verifica si ha sido comprometida en 900+ millones de registros (HIBP k-anonymity — tu contraseña NUNCA se envía al servidor, solo un hash).
             </p>
+            <div className="sec-tool-hint">
+              <small>✅ Fuerte: 12+ chars, mayúsculas, minúsculas, números, símbolos (ej: <code>Secure#Pass123!</code>)</small>
+            </div>
             <div className="sec-tool-form">
               <input
                 type="password"
-                placeholder="Ingresa contrasena..."
+                placeholder="Ingresa contraseña a analizar (privado, no se almacena)..."
                 value={passwordCheck}
                 onChange={(e) => setPasswordCheck(e.target.value)}
               />

@@ -312,6 +312,38 @@
 }
 .sec-tool-form button:hover { background: #2563eb; }
 
+/* Tool hint - helpful examples and format hints */
+.sec-tool-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: rgba(59, 130, 246, 0.08);
+  border-left: 3px solid #3b82f6;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+}
+.sec-tool-hint code {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(59, 130, 246, 0.15);
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .sec-tool-hint {
+  background: rgba(59, 130, 246, 0.12);
+  color: #94a3b8;
+}
+[data-theme="dark"] .sec-tool-hint code {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
 /* Scan result */
 .sec-scan-result {
   display: flex;
