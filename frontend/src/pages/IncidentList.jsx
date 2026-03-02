@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
 import { ClipboardList, MapPin, AlertTriangle, Ambulance, Search, Filter, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../config";

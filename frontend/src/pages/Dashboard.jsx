@@ -1170,7 +1170,7 @@ export default function Dashboard() {
   useEffect(() => {
     const checkSecurityEvents = async () => {
       try {
-        const res = await fetch(`${API}/api/security/events?limit=5&severity=HIGH`);
+        const res = await fetch(`${API_BASE}/api/security/events?limit=5&severity=HIGH`);
         if (!res.ok) return;
         const events = await res.json();
         if (Array.isArray(events) && events.length > 0) {
