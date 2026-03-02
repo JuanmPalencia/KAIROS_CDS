@@ -7,16 +7,24 @@ env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(env_path)
 
 # Database
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+psycopg2://twin:twin@localhost:55432/twin"
-)
+_raw_db_url = os.getenv("DATABASE_URL", "postgresql+psycopg2://twin:twin@localhost:55432/twin")
+# Railway uses postgres:// but SQLAlchemy needs postgresql+psycopg2://
+DATABASE_URL = _raw_db_url.replace("postgres://", "postgresql+psycopg2://", 1) if _raw_db_url.startswith("postgres://") else _raw_db_url
 
 # Redis
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
-REDIS_DB = int(os.getenv("REDIS_DB", "0"))
-REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+REDIS_URL = os.getenv("REDIS_URL", "")
+if not REDIS_URL:
+    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_DB = int(os.getenv("REDIS_DB", "0"))
+    REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+else:
+    # Parse host/port from REDIS_URL for modules that need them separately
+    from urllib.parse import urlparse as _urlparse
+    _parsed = _urlparse(REDIS_URL)
+    REDIS_HOST = _parsed.hostname or "localhost"
+    REDIS_PORT = _parsed.port or 6379
+    REDIS_DB = 0
 
 # JWT Auth
 import secrets as _sec
