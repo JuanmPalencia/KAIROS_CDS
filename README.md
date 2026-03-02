@@ -35,7 +35,7 @@ python3 run_all.py --stop       # Stop services
 
 - ✅ Real-time dashboard with Leaflet maps
 - ✅ 8 ambulances + intelligent routing
-- ✅ 118 API endpoints + Swagger docs
+- ✅ 134 API endpoints + Swagger docs
 - ✅ 10 AI modules (local sklearn models)
 - ✅ Enterprise security (8.5/10 rating)
 - ✅ Hospital occupancy tracking
