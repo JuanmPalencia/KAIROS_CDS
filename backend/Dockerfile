@@ -15,6 +15,6 @@ COPY . .
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-EXPOSE 5001
+EXPOSE ${PORT:-5001}
 
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5001"]
+CMD python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-5001}
