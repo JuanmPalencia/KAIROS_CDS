@@ -119,6 +119,7 @@ export default function Dashboard() {
   const [subtypeFilter, setSubtypeFilter] = useState(() => localStorage.getItem("subtypeFilter") || "ALL");
   const [statusFilter, setStatusFilter] = useState(() => localStorage.getItem("statusFilter") || "ALL");
   const [emergencyAlert, setEmergencyAlert] = useState(null); // {type:'FIREFIGHTERS'|'POLICE', incident}
+  const lastSecEventIdRef = useRef(null); // Track last seen security event
   const [aiAutoSuggestions, setAiAutoSuggestions] = useState([]); // [{incidentId, suggestion}]
   const [overrideMode, setOverrideMode] = useState(false);
   const [overrideVehicle, setOverrideVehicle] = useState("");
@@ -262,12 +263,12 @@ export default function Dashboard() {
     } catch (e) { console.error("Weather fetch error:", e); }
   }, []);
 
-  // Debounced weather fetch following mouse position (300ms debounce)
+  // Debounced weather fetch following mouse position (2s debounce — reduced API calls)
   const onMapMouseMove = useCallback((e) => {
     clearTimeout(weatherTimerRef.current);
     weatherTimerRef.current = setTimeout(() => {
       fetchWeather(e.latlng.lat.toFixed(4), e.latlng.lng.toFixed(4));
-    }, 300);
+    }, 2000);
   }, [fetchWeather]);
 
   const fetchHospitals = async () => {
@@ -467,8 +468,10 @@ export default function Dashboard() {
               <div class="popup-body">
                 <div class="popup-row"><span class="popup-label">Velocidad</span><span>${v.speed} km/h</span></div>
                 <div class="popup-row"><span class="popup-label">Combustible</span>
-                  <span class="fuel-bar-mini"><span class="fuel-fill" style="width:${v.fuel}%;background:${v.fuel < 25 ? '#ef4444' : v.fuel < 50 ? '#f59e0b' : '#22c55e'}"></span></span>
-                  <span>${v.fuel.toFixed(0)}% (${fuelLiters}L / ${tankL}L)</span>
+                  <span style="display:flex;align-items:center;gap:8px;width:100%">
+                    <span class="fuel-bar-mini"><span class="fuel-fill" style="width:${v.fuel}%;background:${v.fuel < 25 ? '#ef4444' : v.fuel < 50 ? '#f59e0b' : '#22c55e'}"></span></span>
+                    <span style="white-space:nowrap">${v.fuel.toFixed(0)}% (${fuelLiters}L / ${tankL}L)</span>
+                  </span>
                 </div>
                 <div class="popup-row"><span class="popup-label">Confiabilidad</span><span>${v.trust_score}/100</span></div>
               </div>
@@ -511,34 +514,42 @@ export default function Dashboard() {
           }
         }
 
-        // Coverage radius for IDLE ambulances
-        // Remove all old coverage circles first
-        for (const [_id, circ] of coverageCirclesRef.current.entries()) {
-          layerRef.current.removeLayer(circ);
-        }
-        coverageCirclesRef.current.clear();
-
+        // Coverage radius — update in place instead of recreating
         if (showCoverage) {
+          const activeIds = new Set();
           for (const v of vehicles) {
             if (v.status === 'IDLE') {
-              const subtypeRadius = { SVA: 3500, SVB: 3000, VIR: 4500, VAMM: 2500, SAMU: 3000 };
-              const radius = subtypeRadius[v.subtype] || 3000;
-              const subtypeColor = { SVA: '#ef4444', SVB: '#22c55e', VIR: '#3b82f6', VAMM: '#f97316', SAMU: '#a855f7' };
-              const color = subtypeColor[v.subtype] || '#22c55e';
-              const cCircle = L.circle([v.lat, v.lon], {
-                radius,
-                color,
-                fillColor: color,
-                fillOpacity: 0.08,
-                weight: 1.5,
-                opacity: 0.35,
-                dashArray: '6, 4',
-                interactive: false, // Don't intercept mouse events
-                pane: 'shadowPane', // Place coverage behind other elements
-              }).addTo(layerRef.current);
-              coverageCirclesRef.current.set(v.id, cCircle);
+              activeIds.add(v.id);
+              const existing = coverageCirclesRef.current.get(v.id);
+              if (existing) {
+                existing.setLatLng([v.lat, v.lon]);
+              } else {
+                const subtypeRadius = { SVA: 3500, SVB: 3000, VIR: 4500, VAMM: 2500, SAMU: 3000 };
+                const subtypeColor = { SVA: '#ef4444', SVB: '#22c55e', VIR: '#3b82f6', VAMM: '#f97316', SAMU: '#a855f7' };
+                const cCircle = L.circle([v.lat, v.lon], {
+                  radius: subtypeRadius[v.subtype] || 3000,
+                  color: subtypeColor[v.subtype] || '#22c55e',
+                  fillColor: subtypeColor[v.subtype] || '#22c55e',
+                  fillOpacity: 0.08, weight: 1.5, opacity: 0.35,
+                  dashArray: '6, 4', interactive: false, pane: 'shadowPane',
+                }).addTo(layerRef.current);
+                coverageCirclesRef.current.set(v.id, cCircle);
+              }
             }
           }
+          // Remove circles for vehicles no longer IDLE
+          for (const [id, circ] of coverageCirclesRef.current.entries()) {
+            if (!activeIds.has(id)) {
+              layerRef.current.removeLayer(circ);
+              coverageCirclesRef.current.delete(id);
+            }
+          }
+        } else {
+          // Coverage disabled — remove all
+          for (const [, circ] of coverageCirclesRef.current.entries()) {
+            layerRef.current.removeLayer(circ);
+          }
+          coverageCirclesRef.current.clear();
         }
 
         // Update incidents
@@ -602,10 +613,13 @@ export default function Dashboard() {
             circle.setPopupContent(popup);
           }
 
-          // Draw route polylines (A→B blue dashed, B→C green dashed)
+          // Draw route polylines (A→B blue, B→C green) — visible during all active phases
           try {
             const routeRaw = inc.route_data;
-            if (routeRaw && (inc.status === "ASSIGNED" || inc.status === "EN_ROUTE")) {
+            const isActiveRoute = routeRaw && inc.status === "ASSIGNED";
+            const phase = inc.route_phase || "TO_INCIDENT";
+
+            if (isActiveRoute) {
               const routeObj = typeof routeRaw === "string" ? JSON.parse(routeRaw) : routeRaw;
               const coords = routeObj?.geometry || routeObj;
               const incIdx = routeObj?.incident_waypoint_idx;
@@ -622,15 +636,18 @@ export default function Dashboard() {
                 }
 
                 const lines = [];
+                const isToHospital = phase === "TO_HOSPITAL";
+                const isAtIncident = phase === "AT_INCIDENT";
 
                 if (incIdx && incIdx > 0 && incIdx < coords.length) {
-                  // Tramo A→B: ambulancia → incidente (azul)
+                  // Tramo A→B: ambulancia → incidente (azul, dimmed if past)
                   const legAB = coords.slice(0, incIdx + 1);
+                  const abDone = isToHospital || isAtIncident;
                   const polyAB = L.polyline(legAB, {
-                    color: "#3b82f6",
-                    weight: 4,
-                    opacity: 0.8,
-                    dashArray: "10, 6",
+                    color: abDone ? "#94a3b8" : "#3b82f6",
+                    weight: abDone ? 3 : 5,
+                    opacity: abDone ? 0.4 : 0.9,
+                    dashArray: abDone ? "6, 8" : null,
                   }).addTo(layerRef.current);
                   lines.push(polyAB);
 
@@ -638,10 +655,10 @@ export default function Dashboard() {
                   const legBC = coords.slice(incIdx);
                   if (legBC.length > 1) {
                     const polyBC = L.polyline(legBC, {
-                      color: "#10b981",
-                      weight: 4,
-                      opacity: 0.8,
-                      dashArray: "8, 8",
+                      color: isToHospital ? "#10b981" : "#6ee7b7",
+                      weight: isToHospital ? 5 : 3,
+                      opacity: isToHospital ? 0.9 : 0.5,
+                      dashArray: isToHospital ? null : "6, 8",
                     }).addTo(layerRef.current);
                     lines.push(polyBC);
                   }
@@ -649,9 +666,8 @@ export default function Dashboard() {
                   // Sin separación, dibujar todo en azul
                   const poly = L.polyline(coords, {
                     color: "#3b82f6",
-                    weight: 4,
-                    opacity: 0.7,
-                    dashArray: "10, 6",
+                    weight: 5,
+                    opacity: 0.9,
                   }).addTo(layerRef.current);
                   lines.push(poly);
                 }
@@ -661,11 +677,9 @@ export default function Dashboard() {
                 // Animated progress dot along route
                 const progress = inc.route_progress ?? 0;
                 if (progress > 0 && progress < 1 && coords.length > 1) {
-                  // Remove old dot
                   const oldDot = routeDotsRef.current.get(inc.id);
                   if (oldDot) layerRef.current.removeLayer(oldDot);
 
-                  // Interpolate position along polyline
                   let totalDist = 0;
                   const segDists = [];
                   for (let i = 1; i < coords.length; i++) {
@@ -677,7 +691,7 @@ export default function Dashboard() {
                   let dotLat = coords[0][0], dotLon = coords[0][1];
                   for (let i = 0; i < segDists.length; i++) {
                     if (targetDist <= segDists[i]) {
-                      const frac = targetDist / segDists[i];
+                      const frac = segDists[i] > 0 ? targetDist / segDists[i] : 0;
                       dotLat = coords[i][0] + frac * (coords[i + 1][0] - coords[i][0]);
                       dotLon = coords[i][1] + frac * (coords[i + 1][1] - coords[i][1]);
                       break;
@@ -687,12 +701,28 @@ export default function Dashboard() {
                   const dotIcon = L.divIcon({
                     html: '<div class="route-progress-dot"></div>',
                     className: 'route-progress-dot-wrap',
-                    iconSize: [14, 14],
-                    iconAnchor: [7, 7],
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8],
                   });
                   const dot = L.marker([dotLat, dotLon], { icon: dotIcon, interactive: false }).addTo(layerRef.current);
                   routeDotsRef.current.set(inc.id, dot);
                 }
+              }
+            } else if (!isActiveRoute) {
+              // Remove route if incident no longer active
+              const oldRoute = routesRef.current.get(inc.id);
+              if (oldRoute) {
+                if (Array.isArray(oldRoute)) {
+                  oldRoute.forEach(p => layerRef.current.removeLayer(p));
+                } else {
+                  layerRef.current.removeLayer(oldRoute);
+                }
+                routesRef.current.delete(inc.id);
+              }
+              const oldDot = routeDotsRef.current.get(inc.id);
+              if (oldDot) {
+                layerRef.current.removeLayer(oldDot);
+                routeDotsRef.current.delete(inc.id);
               }
             }
           } catch {
@@ -1065,46 +1095,32 @@ export default function Dashboard() {
     }
   }, [ssmZones, showSSM]);
 
-  // Risk zones — incident density grid overlay
+  // Risk zones — each active incident gets a risk radius circle
   useEffect(() => {
     if (!mapRef.current || !layerRef.current) return;
-    // Clear old risk zones
     for (const r of riskZonesRef.current) layerRef.current.removeLayer(r);
     riskZonesRef.current = [];
     if (!showRiskZones || incidents.length === 0) return;
 
     const activeInc = incidents.filter(i => i.status !== 'RESOLVED' && i.status !== 'CLOSED');
-    if (activeInc.length < 2) return;
+    if (activeInc.length === 0) return;
 
-    // Build density grid
-    const gridSize = 0.012; // ~1.3 km cells
-    const cells = {};
     for (const inc of activeInc) {
-      const cellR = Math.floor(inc.lat / gridSize);
-      const cellC = Math.floor(inc.lon / gridSize);
-      const key = `${cellR}_${cellC}`;
-      if (!cells[key]) cells[key] = { count: 0, maxSev: 0, r: cellR, c: cellC };
-      cells[key].count++;
-      cells[key].maxSev = Math.max(cells[key].maxSev, inc.severity || 1);
-    }
-
-    for (const cell of Object.values(cells)) {
-      if (cell.count < 2) continue;
-      const lat1 = cell.r * gridSize;
-      const lat2 = (cell.r + 1) * gridSize;
-      const lon1 = cell.c * gridSize;
-      const lon2 = (cell.c + 1) * gridSize;
-      const intensity = Math.min(cell.count / 5, 1);
-      const color = cell.maxSev >= 4 ? '#dc2626' : cell.maxSev >= 3 ? '#f59e0b' : '#3b82f6';
-      const rect = L.rectangle([[lat1, lon1], [lat2, lon2]], {
+      const sev = inc.severity || 1;
+      // Radius: higher severity = larger zone (300m to 800m)
+      const radius = 300 + sev * 100;
+      const color = sev >= 4 ? '#dc2626' : sev >= 3 ? '#f59e0b' : sev >= 2 ? '#f97316' : '#3b82f6';
+      const circle = L.circle([inc.lat, inc.lon], {
+        radius,
         color,
         fillColor: color,
-        fillOpacity: 0.08 + intensity * 0.18,
-        weight: 1.5,
-        opacity: 0.4 + intensity * 0.3,
+        fillOpacity: 0.10 + sev * 0.04,
+        weight: 2,
+        opacity: 0.5 + sev * 0.08,
+        dashArray: '6, 4',
       }).addTo(layerRef.current);
-      rect.bindPopup(`<div class="map-popup"><div class="popup-header" style="background:${color};color:#fff"><strong>Zona de Riesgo</strong></div><div class="popup-body"><div class="popup-row"><span class="popup-label">Incidentes activos</span><span>${cell.count}</span></div><div class="popup-row"><span class="popup-label">Severidad máx.</span><span>${cell.maxSev}</span></div></div></div>`);
-      riskZonesRef.current.push(rect);
+      circle.bindPopup(`<div class="map-popup"><div class="popup-header" style="background:${color};color:#fff"><strong>Zona de Riesgo</strong></div><div class="popup-body"><div class="popup-row"><span class="popup-label">Incidente</span><span>${inc.incident_type || inc.id}</span></div><div class="popup-row"><span class="popup-label">Severidad</span><span>${sev}/5</span></div><div class="popup-row"><span class="popup-label">Radio afectado</span><span>${radius}m</span></div></div></div>`);
+      riskZonesRef.current.push(circle);
     }
   }, [incidents, showRiskZones]);
 
@@ -1149,6 +1165,42 @@ export default function Dashboard() {
       }
     }
   }, [vehicles, incidents]);
+
+  // Security events polling — show toast for HIGH/CRITICAL threats
+  useEffect(() => {
+    const checkSecurityEvents = async () => {
+      try {
+        const res = await fetch(`${API}/api/security/events?limit=5&severity=HIGH`);
+        if (!res.ok) return;
+        const events = await res.json();
+        if (Array.isArray(events) && events.length > 0) {
+          const latest = events[0];
+          const eventKey = latest.id || latest.timestamp || JSON.stringify(latest).slice(0, 50);
+          if (lastSecEventIdRef.current && eventKey !== lastSecEventIdRef.current) {
+            const sev = latest.severity || "HIGH";
+            const icon = sev === "CRITICAL" ? "🔴" : sev === "HIGH" ? "🟠" : "🟡";
+            toast(
+              `${icon} Security: ${latest.event_type || latest.type || "Threat detected"} — ${latest.details || latest.description || sev}`,
+              {
+                duration: 8000,
+                position: "top-right",
+                style: {
+                  background: sev === "CRITICAL" ? "#7f1d1d" : "#78350f",
+                  color: "#fff",
+                  border: `1px solid ${sev === "CRITICAL" ? "#dc2626" : "#f59e0b"}`,
+                  fontWeight: 500,
+                },
+              }
+            );
+          }
+          lastSecEventIdRef.current = eventKey;
+        }
+      } catch { /* ignore */ }
+    };
+    checkSecurityEvents();
+    const interval = setInterval(checkSecurityEvents, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getIncidentTypeLabel = (type) => {
     const labels = {
@@ -1242,7 +1294,7 @@ export default function Dashboard() {
           setAutoGenCount(d.total_generated);
         }
       } catch { /* ignored */ }
-    }, 3000);
+    }, 8000);  // OPTIMIZED: increased from 3000ms to reduce polling
     return () => clearInterval(poll);
   }, []);
 
@@ -1327,7 +1379,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (focusedVehicleId && twinPanelOpen) {
       fetchTwinTelemetry(focusedVehicleId);
-      const interval = setInterval(() => fetchTwinTelemetry(focusedVehicleId), 2000);
+      const interval = setInterval(() => fetchTwinTelemetry(focusedVehicleId), 5000);  // OPTIMIZED: from 2000ms
       return () => clearInterval(interval);
     }
   }, [focusedVehicleId, twinPanelOpen]);
@@ -1336,7 +1388,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (twinPanelOpen) {
       fetchFleetHealth();
-      const interval = setInterval(fetchFleetHealth, 5000);
+      const interval = setInterval(fetchFleetHealth, 10000);  // OPTIMIZED: from 5s
       return () => clearInterval(interval);
     }
   }, [twinPanelOpen]);

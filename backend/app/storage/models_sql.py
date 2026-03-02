@@ -39,6 +39,7 @@ class IncidentSQL(Base):
     ai_reasoning = Column(Text, nullable=True)  # Explicación de la IA
     route_data = Column(Text, nullable=True)  # JSON con ruta de OpenStreetMap
     route_phase = Column(String, default="TO_INCIDENT")  # TO_INCIDENT / TO_HOSPITAL / COMPLETED
+    route_progress = Column(Float, default=0.0)  # Progress en el ciclo de vida (0.0-1.0)
     incident_type = Column(String, default="GENERAL")  # CARDIO, RESPIRATORY, etc.
     description = Column(Text, nullable=True)
     address = Column(String, nullable=True)

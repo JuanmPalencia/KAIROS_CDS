@@ -57,6 +57,14 @@ def train_severity_classifier():
 
     csv_path = os.path.join(DATASETS_DIR, "severity_dataset.csv")
     df = pd.read_csv(csv_path)
+
+    # Rellenar NaN en response_time con mediana por severidad
+    df["response_time"] = df.groupby("severity")["response_time"].transform(
+        lambda s: s.fillna(s.median())
+    )
+    # Si aún quedan NaN (severidad sin datos), rellenar con mediana global
+    df["response_time"] = df["response_time"].fillna(df["response_time"].median())
+
     print(f"   Dataset: {len(df)} muestras")
     print(f"   Distribución: {dict(df['severity'].value_counts())}")
 

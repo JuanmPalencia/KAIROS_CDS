@@ -39,7 +39,7 @@ TRUSTED_PROXY_COUNT = int(os.getenv("TRUSTED_PROXY_COUNT", "0"))
 FIELD_ENCRYPTION_KEY = os.getenv("FIELD_ENCRYPTION_KEY", "")
 
 # Twin Engine
-TICK_MS = int(os.getenv("TICK_MS", "500"))
+TICK_MS = int(os.getenv("TICK_MS", "1500"))  # Optimized: 1.5s instead of 0.5s for better performance
 
 # BSV Blockchain (audit notarization)
 BSV_PRIVATE_KEY = os.getenv("BSV_PRIVATE_KEY", "")

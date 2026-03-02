@@ -291,25 +291,55 @@ def simulate_weather(condition: Optional[str] = None, db: Session = Depends(get_
 # ══════════════════════════════════════════════
 
 GIS_SEED = [
-    # Colegios
+    # Colegios (8)
     {"id": "GIS-SCH-001", "name": "CEIP Antonio Machado", "layer_type": "SCHOOL", "lat": 40.4205, "lon": -3.7110, "address": "C/ Corredera Baja 47", "risk_level": 2},
     {"id": "GIS-SCH-002", "name": "IES San Isidro", "layer_type": "SCHOOL", "lat": 40.4130, "lon": -3.7080, "address": "C/ Toledo 39", "risk_level": 2},
     {"id": "GIS-SCH-003", "name": "Colegio Santa María", "layer_type": "SCHOOL", "lat": 40.4350, "lon": -3.6895, "address": "C/ Castelló 56", "risk_level": 2},
-    # Residencias de mayores
+    {"id": "GIS-SCH-004", "name": "CEIP Palacio Valdés", "layer_type": "SCHOOL", "lat": 40.4450, "lon": -3.7050, "address": "C/ Santa Engracia 140", "risk_level": 2},
+    {"id": "GIS-SCH-005", "name": "IES Ramiro de Maeztu", "layer_type": "SCHOOL", "lat": 40.4395, "lon": -3.6730, "address": "C/ Serrano 127", "risk_level": 2},
+    {"id": "GIS-SCH-006", "name": "Colegio Lourdes", "layer_type": "SCHOOL", "lat": 40.3880, "lon": -3.7420, "address": "C/ San Roberto 8", "risk_level": 2},
+    {"id": "GIS-SCH-007", "name": "CEIP República del Brasil", "layer_type": "SCHOOL", "lat": 40.4000, "lon": -3.6800, "address": "C/ Brasil 2", "risk_level": 2},
+    {"id": "GIS-SCH-008", "name": "IES Beatriz Galindo", "layer_type": "SCHOOL", "lat": 40.4100, "lon": -3.6950, "address": "C/ Goya 10", "risk_level": 2},
+    # Residencias de mayores (6)
     {"id": "GIS-NH-001", "name": "Residencia DomusVi Arturo Soria", "layer_type": "NURSING_HOME", "lat": 40.4520, "lon": -3.6450, "address": "C/ Arturo Soria 287", "risk_level": 3},
     {"id": "GIS-NH-002", "name": "Residencia Orpea Madrid", "layer_type": "NURSING_HOME", "lat": 40.4380, "lon": -3.7200, "address": "C/ Princesa 25", "risk_level": 3},
     {"id": "GIS-NH-003", "name": "Centro de Mayores Puerta de Hierro", "layer_type": "NURSING_HOME", "lat": 40.4600, "lon": -3.7250, "address": "Av. Puerta de Hierro", "risk_level": 3},
-    # Industria HAZMAT
+    {"id": "GIS-NH-004", "name": "Residencia Ballesol Mirasierra", "layer_type": "NURSING_HOME", "lat": 40.4900, "lon": -3.7100, "address": "C/ Mirasierra 20", "risk_level": 3},
+    {"id": "GIS-NH-005", "name": "Centro Residencial Aravaca", "layer_type": "NURSING_HOME", "lat": 40.4560, "lon": -3.7750, "address": "C/ Aravaca 15", "risk_level": 3},
+    {"id": "GIS-NH-006", "name": "Residencia Amavir Vallecas", "layer_type": "NURSING_HOME", "lat": 40.3780, "lon": -3.6600, "address": "C/ Sierra Gorda 30", "risk_level": 3},
+    # Industria HAZMAT (5)
     {"id": "GIS-HAZ-001", "name": "Planta Química Arganda", "layer_type": "HAZMAT", "lat": 40.3080, "lon": -3.4600, "address": "Polígono Industrial Arganda", "risk_level": 5},
     {"id": "GIS-HAZ-002", "name": "Depósito GLP Villaverde", "layer_type": "HAZMAT", "lat": 40.3500, "lon": -3.6950, "address": "Polígono Villaverde", "risk_level": 4},
-    # Estaciones de metro con alta afluencia
+    {"id": "GIS-HAZ-003", "name": "Centro Logístico Mercamadrid", "layer_type": "HAZMAT", "lat": 40.3700, "lon": -3.6700, "address": "Mercamadrid", "risk_level": 3},
+    {"id": "GIS-HAZ-004", "name": "Subestación Eléctrica Fuencarral", "layer_type": "HAZMAT", "lat": 40.4800, "lon": -3.6900, "address": "Fuencarral-El Pardo", "risk_level": 4},
+    {"id": "GIS-HAZ-005", "name": "Depósito Combustible Barajas", "layer_type": "HAZMAT", "lat": 40.4700, "lon": -3.5600, "address": "Zona Aeroportuaria Barajas", "risk_level": 5},
+    # Estaciones de metro con alta afluencia (6)
     {"id": "GIS-MET-001", "name": "Metro Sol (Alta afluencia)", "layer_type": "METRO", "lat": 40.4168, "lon": -3.7038, "risk_level": 2},
     {"id": "GIS-MET-002", "name": "Metro Atocha Renfe", "layer_type": "METRO", "lat": 40.4065, "lon": -3.6893, "risk_level": 2},
-    # Comisarías / Bomberos para multi-agencia
+    {"id": "GIS-MET-003", "name": "Metro Nuevos Ministerios", "layer_type": "METRO", "lat": 40.4460, "lon": -3.6920, "risk_level": 2},
+    {"id": "GIS-MET-004", "name": "Metro Moncloa", "layer_type": "METRO", "lat": 40.4340, "lon": -3.7190, "risk_level": 2},
+    {"id": "GIS-MET-005", "name": "Metro Príncipe Pío", "layer_type": "METRO", "lat": 40.4210, "lon": -3.7200, "risk_level": 2},
+    {"id": "GIS-MET-006", "name": "Metro Chamartín", "layer_type": "METRO", "lat": 40.4720, "lon": -3.6830, "risk_level": 2},
+    # Comisarías (4)
     {"id": "GIS-POL-001", "name": "Comisaría Centro (Policía Nacional)", "layer_type": "POLICE", "lat": 40.4180, "lon": -3.7065, "address": "C/Leganitos 19"},
     {"id": "GIS-POL-002", "name": "Policía Municipal Centro", "layer_type": "POLICE", "lat": 40.4155, "lon": -3.7095, "address": "Pza. Mayor"},
+    {"id": "GIS-POL-003", "name": "Comisaría Retiro", "layer_type": "POLICE", "lat": 40.4110, "lon": -3.6750, "address": "C/ Huertas 76-78"},
+    {"id": "GIS-POL-004", "name": "Comisaría Chamberí", "layer_type": "POLICE", "lat": 40.4350, "lon": -3.7030, "address": "C/ Rafael Calvo 33"},
+    # Parques de Bomberos (4)
     {"id": "GIS-FIRE-001", "name": "Parque de Bomberos nº1 (Imperial)", "layer_type": "FIRE", "lat": 40.4098, "lon": -3.7145, "address": "Pza. Puerta Cerrada"},
     {"id": "GIS-FIRE-002", "name": "Parque de Bomberos nº3 (Salamanca)", "layer_type": "FIRE", "lat": 40.4320, "lon": -3.6780, "address": "C/ O'Donnell 50"},
+    {"id": "GIS-FIRE-003", "name": "Parque de Bomberos nº7 (Hortaleza)", "layer_type": "FIRE", "lat": 40.4700, "lon": -3.6400, "address": "C/ Manoteras 10"},
+    {"id": "GIS-FIRE-004", "name": "Parque de Bomberos nº5 (Carabanchel)", "layer_type": "FIRE", "lat": 40.3800, "lon": -3.7400, "address": "C/ Eugenia de Montijo 58"},
+    # Centros deportivos / Grandes recintos (4)
+    {"id": "GIS-VENUE-001", "name": "Estadio Santiago Bernabéu", "layer_type": "VENUE", "lat": 40.4531, "lon": -3.6883, "address": "Av. Concha Espina 1", "risk_level": 3},
+    {"id": "GIS-VENUE-002", "name": "WiZink Center", "layer_type": "VENUE", "lat": 40.4020, "lon": -3.6520, "address": "Av. Felipe II s/n", "risk_level": 3},
+    {"id": "GIS-VENUE-003", "name": "IFEMA Feria de Madrid", "layer_type": "VENUE", "lat": 40.4650, "lon": -3.6150, "address": "Av. Partenón 5", "risk_level": 3},
+    {"id": "GIS-VENUE-004", "name": "Estadio Wanda Metropolitano", "layer_type": "VENUE", "lat": 40.4362, "lon": -3.5995, "address": "Av. Luis Aragonés 4", "risk_level": 3},
+    # Centros de salud (4)
+    {"id": "GIS-HEALTH-001", "name": "Centro de Salud Lavapies", "layer_type": "HEALTH_CENTER", "lat": 40.4090, "lon": -3.7010, "address": "C/ Provisiones 1", "risk_level": 1},
+    {"id": "GIS-HEALTH-002", "name": "Centro de Salud Chamberí", "layer_type": "HEALTH_CENTER", "lat": 40.4340, "lon": -3.7060, "address": "C/ Habana 18", "risk_level": 1},
+    {"id": "GIS-HEALTH-003", "name": "Centro de Salud Recoletos", "layer_type": "HEALTH_CENTER", "lat": 40.4250, "lon": -3.6880, "address": "C/ Recoletos 14", "risk_level": 1},
+    {"id": "GIS-HEALTH-004", "name": "Centro de Salud Usera", "layer_type": "HEALTH_CENTER", "lat": 40.3850, "lon": -3.7050, "address": "C/ Marcelo Usera 53", "risk_level": 1},
 ]
 
 
@@ -345,13 +375,25 @@ def list_gis(layer_type: Optional[str] = None, db: Session = Depends(get_db)):
 # ══════════════════════════════════════════════
 
 AGENCY_SEED = [
+    # Bomberos (5)
     {"id": "BOM-001", "agency": "BOMBEROS", "unit_name": "BUP-1 Imperial", "unit_type": "BUP", "lat": 40.4098, "lon": -3.7145, "contact_radio": "TETRA Ch.1"},
     {"id": "BOM-002", "agency": "BOMBEROS", "unit_name": "BUP-3 Salamanca", "unit_type": "BUP", "lat": 40.4320, "lon": -3.6780, "contact_radio": "TETRA Ch.1"},
     {"id": "BOM-003", "agency": "BOMBEROS", "unit_name": "Autoescala AE-1", "unit_type": "AUTOESCALA", "lat": 40.4098, "lon": -3.7145, "contact_radio": "TETRA Ch.2"},
+    {"id": "BOM-004", "agency": "BOMBEROS", "unit_name": "BUP-7 Hortaleza", "unit_type": "BUP", "lat": 40.4700, "lon": -3.6400, "contact_radio": "TETRA Ch.1"},
+    {"id": "BOM-005", "agency": "BOMBEROS", "unit_name": "BUP-5 Carabanchel", "unit_type": "BUP", "lat": 40.3800, "lon": -3.7400, "contact_radio": "TETRA Ch.2"},
+    # Policía Nacional (4)
     {"id": "POL-001", "agency": "POLICIA_NACIONAL", "unit_name": "Patrulla Z-Centro-1", "unit_type": "PATRULLA", "lat": 40.4180, "lon": -3.7065, "contact_radio": "TETRA Ch.5"},
     {"id": "POL-002", "agency": "POLICIA_NACIONAL", "unit_name": "Patrulla Z-Centro-2", "unit_type": "PATRULLA", "lat": 40.4155, "lon": -3.7095, "contact_radio": "TETRA Ch.5"},
-    {"id": "POL-003", "agency": "POLICIA_MUNICIPAL", "unit_name": "PM Tráfico Centro", "unit_type": "TRAFICO", "lat": 40.4200, "lon": -3.7050, "contact_radio": "TETRA Ch.7"},
+    {"id": "POL-003", "agency": "POLICIA_NACIONAL", "unit_name": "Patrulla Z-Retiro-1", "unit_type": "PATRULLA", "lat": 40.4110, "lon": -3.6750, "contact_radio": "TETRA Ch.5"},
+    {"id": "POL-004", "agency": "POLICIA_NACIONAL", "unit_name": "GEO Unidad Especial", "unit_type": "GEO", "lat": 40.4300, "lon": -3.6500, "contact_radio": "TETRA Ch.6"},
+    # Policía Municipal (3)
+    {"id": "PM-001", "agency": "POLICIA_MUNICIPAL", "unit_name": "PM Tráfico Centro", "unit_type": "TRAFICO", "lat": 40.4200, "lon": -3.7050, "contact_radio": "TETRA Ch.7"},
+    {"id": "PM-002", "agency": "POLICIA_MUNICIPAL", "unit_name": "PM Tráfico Norte", "unit_type": "TRAFICO", "lat": 40.4600, "lon": -3.6900, "contact_radio": "TETRA Ch.7"},
+    {"id": "PM-003", "agency": "POLICIA_MUNICIPAL", "unit_name": "PM Seguridad Ciudadana", "unit_type": "PATRULLA", "lat": 40.4050, "lon": -3.7100, "contact_radio": "TETRA Ch.8"},
+    # Protección Civil (3)
     {"id": "PC-001", "agency": "PROTECCION_CIVIL", "unit_name": "Unidad Logística PC-1", "unit_type": "LOGISTICA", "lat": 40.4250, "lon": -3.7100, "contact_radio": "TETRA Ch.9"},
+    {"id": "PC-002", "agency": "PROTECCION_CIVIL", "unit_name": "Unidad NRBQ PC-2", "unit_type": "NRBQ", "lat": 40.4400, "lon": -3.7000, "contact_radio": "TETRA Ch.9"},
+    {"id": "PC-003", "agency": "PROTECCION_CIVIL", "unit_name": "Unidad Rescate PC-3", "unit_type": "RESCATE", "lat": 40.3900, "lon": -3.7200, "contact_radio": "TETRA Ch.10"},
 ]
 
 

@@ -61,7 +61,24 @@
       "Bash(ls:*)",
       "Bash(cat:*)",
       "Bash(echo:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(git revert:*)",
+      "Bash(git clone:*)",
+      "Bash(cd cyber-claude:*)",
+      "Bash(env:*)",
+      "Bash(docker-compose:*)",
+      "Bash(head:*)",
+      "Bash(cd /c/Users/Juanm/CDS_challenge/KAIROS_CDS/cyber-claude && node dist/cli/index.js scan --quick 2>&1)",
+      "Bash(tee:*)",
+      "Bash(cd:*)",
+      "Bash(which python3:*)",
+      "Bash(/c/Users/Juanm/AppData/Local/Microsoft/WindowsApps/python3.exe:*)",
+      "Bash(tail:*)",
+      "Bash(cmd:*)",
+      "Bash(sleep 10 && docker --version 2>&1)",
+      "Bash(docker ps:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImV4cCI6MTc3MjM3NjU0OSwiaWF0IjoxNzcyMzc0NzQ5LCJqdGkiOiIxMTAxNjkzMS00Y2JmLTRjNjEtYWVmZC1jZWM4YzNhNjZlODAifQ.y8Utj6lY13EW5Oe02jvQPuuDO1cKT6Nr8ESPf6Wk7rM\" echo \"🚑 Creando ambulancias...\" curl -s -X POST http://localhost:5001/fleet/seed-ambulances -H \"Authorization: Bearer $TOKEN\")",
+      "Bash(unzip:*)"
     ]
   }
 }

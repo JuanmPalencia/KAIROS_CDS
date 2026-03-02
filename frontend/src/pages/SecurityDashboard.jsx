@@ -95,7 +95,7 @@ export default function SecurityDashboard() {
 
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
-  useEffect(() => { fetchAll(); const t = setInterval(fetchAll, 5000); return () => clearInterval(t); }, [fetchAll]);
+  useEffect(() => { fetchAll(); const t = setInterval(fetchAll, 15000); return () => clearInterval(t); }, [fetchAll]);  // OPTIMIZED: 5s → 15s
 
   /* ── Actions ── */
   const handleScan = async () => {

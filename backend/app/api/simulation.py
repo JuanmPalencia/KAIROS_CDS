@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from ..storage.db import SessionLocal, get_db
-from ..storage.models_sql import IncidentSQL, AuditLog, MerkleBatch, Vehicle
+from ..storage.models_sql import IncidentSQL, AuditLog, MerkleBatch, Vehicle, PatientTracking, Hospital, PatientCareReport
 from ..storage.repos.audit_repo import AuditRepo
 from ..core.incident_generator import generate_random_incident, get_all_incident_types, INCIDENT_TYPES
 from ..core.sim_adapter import get_speed_multiplier, set_speed_multiplier
@@ -31,6 +31,7 @@ _auto_gen_task: asyncio.Task | None = None
 _auto_gen_running: bool = False
 _auto_gen_interval: int = 30  # segundos entre incidentes
 _auto_gen_count: int = 0
+
 
 
 async def _auto_generate_loop():
@@ -95,7 +96,10 @@ def reset_system(db: Session = Depends(get_db)):
     _auto_gen_task = None
     _auto_gen_count = 0
 
-    # Limpiar tablas
+    # Limpiar tablas en orden de dependencias (foreign keys)
+    # PatientTracking → PatientCareReport → Incidents
+    db.query(PatientTracking).delete()
+    db.query(PatientCareReport).delete()
     deleted_incidents = db.query(IncidentSQL).delete()
     # Desvincular audit_logs de merkle_batches antes de borrar
     db.execute(text("UPDATE audit_logs SET merkle_batch_id = NULL WHERE merkle_batch_id IS NOT NULL"))
@@ -181,6 +185,9 @@ def auto_generate_status():
         "interval": _auto_gen_interval,
         "total_generated": _auto_gen_count,
     }
+
+
+
 
 
 @router.post("/generate-one")

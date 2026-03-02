@@ -154,11 +154,21 @@ def get_cities(db: Session = Depends(get_db)):
     return {"cities": all_cities}
 
 
+# ── /api/live cache (avoid 7 DB queries per poll per user) ──────────
+_live_cache = {"data": None, "ts": 0, "city": None}
+_LIVE_CACHE_TTL = 2.0  # seconds
+
+
 @app.get("/api/live")
 def get_live_data(city: str = None, db: Session = Depends(get_db)):
-    """Get current live data (vehicles, incidents, metrics) for polling"""
+    """Get current live data with 2s in-memory cache."""
     from .storage.models_sql import Vehicle, IncidentSQL, GasStation, WeatherCondition, DEALocation, AgencyResource, Hospital
     import json as _json
+
+    # Return cached if fresh
+    now = time.time()
+    if _live_cache["data"] and (now - _live_cache["ts"]) < _LIVE_CACHE_TTL and _live_cache["city"] == city:
+        return _live_cache["data"]
 
     try:
         vehicles = db.query(Vehicle).all()
@@ -166,19 +176,33 @@ def get_live_data(city: str = None, db: Session = Depends(get_db)):
         if city:
             inc_query = inc_query.filter(IncidentSQL.city == city)
         incidents = inc_query.all()
+
+        # Single pass for vehicle metrics + progress map
+        vehicle_progress_map = {}
+        active = 0
+        total_fuel = 0.0
+        enabled_count = 0
+        for v in vehicles:
+            vehicle_progress_map[v.id] = v.route_progress
+            if v.enabled:
+                enabled_count += 1
+                total_fuel += v.fuel
+                if v.status != "IDLE":
+                    active += 1
+
+        avg_fuel = total_fuel / enabled_count if enabled_count else 0
+
+        # Batch remaining queries (3 queries instead of 5)
         gas_stations = db.query(GasStation).filter(GasStation.is_open == True).all()
         hospitals = db.query(Hospital).filter(Hospital.available == True).all()
-
-        # Build vehicle route_progress lookup for incident enrichment
-        vehicle_progress_map = {v.id: v.route_progress for v in vehicles}
-        
-        # Calculate fleet metrics
-        active = len([v for v in vehicles if v.status != "IDLE" and v.enabled])
-        total_fuel = sum(v.fuel for v in vehicles if v.enabled)
-        avg_fuel = total_fuel / len(vehicles) if vehicles else 0
-
-        # Weather
         weather = db.query(WeatherCondition).order_by(WeatherCondition.timestamp.desc()).first()
+
+        # Lightweight counts
+        dispatched_agencies = db.query(AgencyResource).filter(
+            AgencyResource.status.in_(["DISPATCHED", "ON_SCENE"])
+        ).count()
+        dea_count = db.query(DEALocation).filter(DEALocation.is_available == True).count()
+
         weather_data = None
         if weather:
             weather_data = {
@@ -189,14 +213,6 @@ def get_live_data(city: str = None, db: Session = Depends(get_db)):
                 "description": weather.description,
             }
 
-        # Agencies dispatched
-        dispatched_agencies = db.query(AgencyResource).filter(
-            AgencyResource.status.in_(["DISPATCHED", "ON_SCENE"])
-        ).count()
-
-        # DEA count
-        dea_count = db.query(DEALocation).filter(DEALocation.is_available == True).count()
-        
         payload = {
             "vehicles": [
                 {
@@ -271,6 +287,11 @@ def get_live_data(city: str = None, db: Session = Depends(get_db)):
             ],
             "weather": weather_data,
         }
+
+        # Update cache
+        _live_cache["data"] = payload
+        _live_cache["ts"] = now
+        _live_cache["city"] = city
 
         return payload
     except Exception as e:

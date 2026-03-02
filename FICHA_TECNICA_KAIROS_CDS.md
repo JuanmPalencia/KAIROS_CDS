@@ -1126,6 +1126,53 @@ El hook `useSecurityAlerts.js` en el frontend realiza polling cada 5 segundos a 
 - Dispara `Notification` nativa del navegador (solicita permiso)
 - Expone `{ alerts, hasNew, clearNew }` a los componentes consumidores
 
+## 10.10 Integración Cyber-Claude
+
+KAIROS CDS integra **cyber-claude** como capa de ciberseguridad avanzada:
+
+### Capacidades de cyber-claude
+
+| Capacidad | Descripción |
+|---|---|
+| **Escaneo rápido** | Análisis de seguridad en 2-3 minutos |
+| **Análisis Web** | OWASP Top 10 (SQLi, XSS, CSRF, etc.) |
+| **Smart Contracts** | Análisis Solidity con 11+ detectores |
+| **OSINT** | 10 herramientas: DNS, WHOIS, subdomains, breaches, tech stack, Wayback, IP lookup |
+| **Sistema** | Análisis de seguridad de desktop/network |
+| **Reportes** | Exporta a Markdown, JSON, CSV, STIX |
+
+### Uso
+
+```bash
+# Ejecutar escaneo de seguridad desde run_all.py
+python3 run_all.py --security
+
+# O desde cyber-claude directamente
+cd cyber-claude
+npm run build
+node dist/cli/index.js scan                    # Scan completo
+node dist/cli/index.js scan --quick            # Scan rápido (2-3 min)
+node dist/cli/index.js webscan <url>          # Scan web de vulnerabilidades
+node dist/cli/index.js web3 scan <file.sol>   # Análisis de smart contracts
+node dist/cli/index.js interactive            # REPL interactivo
+```
+
+### Integración en KAIROS
+
+- **Ubicación**: `/cyber-claude/` subdirectorio
+- **Ejecución**: Via `run_all.py --security` o manual
+- **Reportes**: Guardados en `cyber-claude/scans/` con timestamp
+- **API Key**: Configurado con Anthropic Claude Sonnet 4.5
+- **Resultados**: Disponibles en dashboard de seguridad
+
+### Flujo de análisis
+
+1. Operador ejecuta: `python3 run_all.py --security`
+2. cyber-claude escanea sistema completo (DB, API, red, dependencias)
+3. Genera reporte con hallazgos, severidad y remediaciones
+4. Reporte guardado en `cyber-claude/scans/YYYYMMDD_HHMMSS.md`
+5. Admin revisa en Security Dashboard
+
 ---
 
 # 11. Blockchain y Auditoría Inmutable

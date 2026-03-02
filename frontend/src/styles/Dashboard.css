@@ -1232,8 +1232,8 @@
   border: none !important;
 }
 .route-progress-dot {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: #3b82f6;
   border: 2px solid #fff;

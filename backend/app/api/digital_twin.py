@@ -23,7 +23,7 @@ router = APIRouter(prefix="/digital-twin", tags=["digital-twin"])
 
 # ── In-memory telemetry history (ring buffer per vehicle) ─────────────
 _telemetry_history: Dict[str, list] = {}  # vid → [{ts, speed, fuel, lat, lon, …}]
-MAX_HISTORY = 120  # ~60 seconds at 500ms ticks
+MAX_HISTORY = 40  # ~60 seconds at 1500ms ticks (optimized from 120)
 
 
 def record_telemetry_tick(vehicles: list):

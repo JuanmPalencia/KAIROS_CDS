@@ -20,18 +20,18 @@ import json
 import math
 from sqlalchemy.orm import Session
 from ..storage.models_sql import Vehicle, IncidentSQL, GasStation
-from .routing import get_router
 
 # ── Estado persistente entre ticks ────────────────────────────────────
 _vehicle_speeds: dict[str, float] = {}        # vel. asignada por ruta
 _refueling: dict[str, int] = {}               # vid → ticks restantes
 _heading_to_gas: dict[str, str] = {}          # vid → gas_station_id (camino a repostar)
-_speed_multiplier: float = 1.0                # multiplicador de velocidad global
+_speed_multiplier: float = 8.0                 # 8x simulation acceleration for responsive demo
+_route_cache: dict[str, dict] = {}            # incident_id → parsed route_data (avoid re-parsing JSON)
 
 # ── Constantes realistas ──────────────────────────────────────────────
 LOW_FUEL_PCT = 25.0          # % para decidir ir a repostar
-REFUEL_TICKS = 16            # ~8 seg a 500ms/tick (≈5 min simulados)
-TICK_SECONDS = 0.5           # cada tick del simulador = 0.5s real
+REFUEL_TICKS = 8             # ~12 seg a 1500ms/tick (≈5 min simulados) - OPTIMIZED
+TICK_SECONDS = 1.5           # cada tick del simulador = 1.5s real (OPTIMIZED from 0.5s)
 
 # Consumo medio diésel (L/100km) según subtipo
 CONSUMPTION_L100KM = {
@@ -105,8 +105,14 @@ class MockSimAdapter:
 
     def step(self, db: Session, vehicles: list[Vehicle],
              incidents: list[IncidentSQL]) -> None:
-        gas_stations = (db.query(GasStation)
-                        .filter(GasStation.is_open == True).all())
+        # Pre-build incident lookup by vehicle (O(1) instead of O(n))
+        inc_by_vehicle = {}
+        for i in incidents:
+            if i.assigned_vehicle_id and i.status == "ASSIGNED":
+                inc_by_vehicle[i.assigned_vehicle_id] = i
+
+        # Lazy-load gas stations only if needed
+        gas_stations = None
 
         for v in vehicles:
             if not v.enabled:
@@ -119,20 +125,18 @@ class MockSimAdapter:
 
             # ② En ruta → seguir destino
             if v.status == "EN_ROUTE":
-                self._step_en_route(v, incidents)
+                target = inc_by_vehicle.get(v.id)
+                if target:
+                    self._step_en_route(v, target)
                 continue
 
             # ③ IDLE → verificar si necesita repostar
-            #    SOLO va a repostar si NO tiene incidente asignado
-            has_case = any(
-                i.assigned_vehicle_id == v.id and i.status == "ASSIGNED"
-                for i in incidents
-            )
-            if (not has_case
-                    and v.fuel < LOW_FUEL_PCT
-                    and gas_stations):
-                self._step_go_refuel(v, gas_stations)
-                continue
+            if v.fuel < LOW_FUEL_PCT and v.id not in inc_by_vehicle:
+                if gas_stations is None:
+                    gas_stations = db.query(GasStation).filter(GasStation.is_open == True).all()
+                if gas_stations:
+                    self._step_go_refuel(v, gas_stations)
+                    continue
 
             # ④ IDLE normal → parada en base
             self._step_idle(v)
@@ -140,61 +144,59 @@ class MockSimAdapter:
         db.commit()
 
     # ── EN_ROUTE ──────────────────────────────────────────────────────
-    def _step_en_route(self, v: Vehicle,
-                       incidents: list[IncidentSQL]) -> None:
-        target = None
-        for inc in incidents:
-            if inc.assigned_vehicle_id == v.id and inc.status == "ASSIGNED":
-                target = inc
-                break
-        if not target:
-            return
-
+    def _step_en_route(self, v: Vehicle, target: IncidentSQL) -> None:
         subtype = getattr(v, "subtype", "SVB")
         max_spd = MAX_SPEED.get(subtype, 80)
-        if v.id not in _vehicle_speeds or v.route_progress < 0.01:
-            _vehicle_speeds[v.id] = round(random.uniform(max_spd * 0.45,
-                                                          max_spd * 0.85), 1)
-        speed_kmh = _vehicle_speeds[v.id]
 
-        # Apply global speed multiplier
-        effective_speed = speed_kmh * _speed_multiplier
+        # Assign stable speed once per route
+        if v.id not in _vehicle_speeds:
+            _vehicle_speeds[v.id] = round(random.uniform(max_spd * 0.55, max_spd * 0.85), 1)
+        effective_speed = _vehicle_speeds[v.id] * _speed_multiplier
 
-        # Intentar seguir ruta almacenada
+        # Use cached parsed route data (avoid JSON.parse every tick)
         if target.route_data:
-            try:
-                route_info = json.loads(target.route_data)
+            route_info = _route_cache.get(target.id)
+            if route_info is None:
+                try:
+                    route_info = json.loads(target.route_data)
+                    _route_cache[target.id] = route_info
+                except Exception:
+                    route_info = None
+
+            if route_info:
                 waypoints = route_info.get("geometry", [])
                 distance_km = route_info.get("distance_km", 1.0) or 1.0
 
-                if waypoints and len(waypoints) >= 2:
+                if len(waypoints) >= 2:
                     hours_per_tick = TICK_SECONDS / 3600.0
                     km_per_tick = effective_speed * hours_per_tick
                     progress_inc = km_per_tick / distance_km
                     v.route_progress = min(1.0, v.route_progress + progress_inc)
 
-                    router = get_router()
-                    lat, lon = router.calculate_progress_on_route(
-                        waypoints, v.route_progress)
-                    v.lat = lat
-                    v.lon = lon
-                    v.speed = effective_speed
+                    # Linear interpolation on waypoints
+                    p = v.route_progress
+                    n = len(waypoints) - 1
+                    idx = min(int(p * n), n - 1)
+                    t = (p * n) - idx
+
+                    pt1 = waypoints[idx]
+                    pt2 = waypoints[idx + 1]
+                    v.lat = pt1[0] + (pt2[0] - pt1[0]) * t
+                    v.lon = pt1[1] + (pt2[1] - pt1[1]) * t
+                    v.speed = _vehicle_speeds[v.id]  # Display base speed (not multiplied)
                     _consume_fuel_driving(v, km_per_tick)
                     return
-            except Exception as e:
-                print(f"⚠️ Route following failed for {v.id}: {e}")
 
-        # Fallback: línea recta
-        step = 0.00025 * _speed_multiplier
+        # Fallback: direct movement
+        step = 0.0004 * _speed_multiplier
         dlat = target.lat - v.lat
         dlon = target.lon - v.lon
         mag = (dlat ** 2 + dlon ** 2) ** 0.5
         if mag > 0:
             v.lat += (dlat / mag) * step
             v.lon += (dlon / mag) * step
-        v.speed = effective_speed
-        km_approx = step * 111
-        _consume_fuel_driving(v, km_approx)
+        v.speed = _vehicle_speeds.get(v.id, 60.0)  # Display base speed
+        _consume_fuel_driving(v, step * 111)
 
     # ── REFUELING ─────────────────────────────────────────────────────
     @staticmethod
@@ -258,6 +260,9 @@ class MockSimAdapter:
         """
         _vehicle_speeds.pop(v.id, None)
         _heading_to_gas.pop(v.id, None)
+        # Cleanup stale route cache entries (limit memory)
+        if len(_route_cache) > 50:
+            _route_cache.clear()
 
         # ~2% de probabilidad de micro-maniobra (1-3 metros)
         if random.random() < 0.02:
