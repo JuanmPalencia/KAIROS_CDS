@@ -53,8 +53,13 @@ monitoring/alertmanager_data/
 # Blockchain local ledger
 backend/data/
 
-# Cyber-Claude (dev tool, not part of product)
-cyber-claude/
+# Cyber-Claude artifacts (keep source, exclude generated)
+cyber-claude/node_modules/
+cyber-claude/dist/
+cyber-claude/*.log
+cyber-claude/scans/
+cyber-claude/scan-*.txt
+cyber-claude/pcap/
 
 # Windows artifacts
 nul
