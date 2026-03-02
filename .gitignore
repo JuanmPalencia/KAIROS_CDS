@@ -1,4 +1,4 @@
-# Python
+ # Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -53,6 +53,10 @@ monitoring/alertmanager_data/
 # Blockchain local ledger
 backend/data/
 
-# ML models (large binary)
-backend/models/*.joblib
+# Cyber-Claude (dev tool, not part of product)
+cyber-claude/
+
+# Windows artifacts
+nul
+
 /.claude

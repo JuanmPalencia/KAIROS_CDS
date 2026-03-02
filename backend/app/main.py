@@ -114,6 +114,11 @@ _cors_origins = [
     "http://127.0.0.1:5174",
     "http://127.0.0.1:3000",
 ]
+# Add origins from CORS_ORIGINS env var (comma-separated)
+import os as _os
+_extra = _os.getenv("CORS_ORIGINS", "")
+if _extra:
+    _cors_origins.extend([o.strip() for o in _extra.split(",") if o.strip()])
 logger.info(f"CORS allowed origins: {_cors_origins}")
 app.add_middleware(
     CORSMiddleware,

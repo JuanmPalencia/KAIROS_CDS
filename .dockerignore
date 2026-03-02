@@ -1,0 +1,15 @@
+.git
+.claude
+.gitignore
+.dockerignore
+cyber-claude/
+monitoring/
+nul
+*.md
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+.env
+.env.*
