@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import logoKairos from "../assets/logo_kairos.png";
-import logoGtp from "../assets/logo_gtp.jpeg";
+import logoGtp from "../assets/logo_gtp.png";
 import "../styles/DriverMobile.css";
 
 export default function DriverLogin() {

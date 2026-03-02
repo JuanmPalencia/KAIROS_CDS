@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect, useRef, memo } from "react";
 import logoKairos from "../assets/logo_kairos.png";
-import logoGtp from "../assets/logo_gtp.jpeg";
+import logoGtp from "../assets/logo_gtp.png";
 import {
   LayoutDashboard,
   ClipboardList,

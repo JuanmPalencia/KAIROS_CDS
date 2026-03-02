@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import logoKairos from "../assets/logo_kairos.png";
-import logoGtp from "../assets/logo_gtp.jpeg";
+import logoGtp from "../assets/logo_gtp.png";
 import "../styles/Login.css";
 
 export default function Login() {
