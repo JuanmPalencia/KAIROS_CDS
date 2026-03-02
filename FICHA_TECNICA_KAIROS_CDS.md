@@ -73,7 +73,7 @@ KAIROS CDS (Clinical Decision Support) es un sistema de gemelo digital en tiempo
 | Módulos de IA | 10 |
 | Módulos blockchain | 7 |
 | Archivos CSS | 18 |
-| Dependencias Python | 26 (sin openai) |
+| Dependencias Python | 26 (IA 100% local, sin APIs externas) |
 | Dependencias npm | 24 (13 prod + 11 dev) |
 | Servicios Docker | 6 (db, redis, backend, frontend, prometheus, alertmanager) |
 | Tests automatizados | 13 suites (11 backend + 2 frontend), 72+ tests |
