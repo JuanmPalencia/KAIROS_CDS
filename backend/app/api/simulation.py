@@ -37,10 +37,18 @@ _auto_gen_count: int = 0
 async def _auto_generate_loop():
     """Bucle asíncrono que genera incidentes cada N segundos."""
     global _auto_gen_running, _auto_gen_count
+    MAX_OPEN = 15  # Cap open incidents to prevent CPU overload
     while _auto_gen_running:
         try:
             db = SessionLocal()
             try:
+                # Skip generation if too many open incidents
+                open_count = db.query(IncidentSQL).filter(IncidentSQL.status.in_(["OPEN", "ASSIGNED"])).count()
+                if open_count >= MAX_OPEN:
+                    await asyncio.sleep(_auto_gen_interval)
+                    db.close()
+                    continue
+
                 data = generate_random_incident()
                 existing = db.query(IncidentSQL).count()
                 inc_id = f"INC-{existing+1:03d}"
