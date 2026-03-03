@@ -156,6 +156,21 @@ class TwinEngine:
         _at_incident_ticks = {}  # incident_id → tick counter (persists across DB sessions)
         print(f"[TWIN-ENGINE] Started (TICK_MS={TICK_MS})", flush=True)
 
+        # On startup, resolve stale incidents to avoid CPU overload
+        _cleanup_db = SessionLocal()
+        try:
+            from app.storage.models_sql import Incident as _Inc
+            _stale = _cleanup_db.query(_Inc).filter(_Inc.status.in_(["OPEN", "ASSIGNED"])).all()
+            if len(_stale) > 10:
+                for _s in _stale[10:]:
+                    _s.status = "RESOLVED"
+                _cleanup_db.commit()
+                print(f"[TWIN-ENGINE] Cleaned {len(_stale) - 10} stale incidents on startup", flush=True)
+        except Exception as _e:
+            print(f"[TWIN-ENGINE] Cleanup warning: {_e}", flush=True)
+        finally:
+            _cleanup_db.close()
+
         while self.running:
             t0 = time.time()
 
