@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import ipaddress
+import json as _json
 import logging
 import re
 import secrets
@@ -667,8 +668,6 @@ def get_real_ip(request: Request) -> str:
 # ═══════════════════════════════════════════════════════════════════════
 # 14. REQUEST BODY INJECTION SCANNING
 # ═══════════════════════════════════════════════════════════════════════
-
-import json as _json
 
 _BODY_SCAN_SKIP_PATHS = {
     "/api/security/scan-input",    # The threat scanner tool itself

@@ -12,6 +12,7 @@ Endpoints:
 """
 
 import asyncio
+import logging
 import random
 from datetime import datetime
 from fastapi import APIRouter, Depends
@@ -25,6 +26,7 @@ from ..core.sim_adapter import get_speed_multiplier, set_speed_multiplier
 from ..api.fleet import FLEET_SEED
 
 router = APIRouter(prefix="/simulation", tags=["simulation"])
+logger = logging.getLogger(__name__)
 
 # ── Estado global del auto-generator ──────────────────────────────────
 _auto_gen_task: asyncio.Task | None = None
@@ -50,8 +52,10 @@ async def _auto_generate_loop():
                     continue
 
                 data = generate_random_incident()
-                existing = db.query(IncidentSQL).count()
-                inc_id = f"INC-{existing+1:03d}"
+                max_num = db.execute(
+                    text("SELECT COALESCE(MAX(CAST(SUBSTRING(id FROM 5) AS INTEGER)), 0) FROM incidents")
+                ).scalar() or 0
+                inc_id = f"INC-{max_num + 1:03d}"
 
                 inc = IncidentSQL(
                     id=inc_id,
@@ -78,11 +82,11 @@ async def _auto_generate_loop():
                     details=f"[AUTO-GEN] Type: {inc.incident_type}, Severity: {inc.severity}, Desc: {inc.description}",
                 )
                 _auto_gen_count += 1
-                print(f"🎲 Auto-generado: {inc.id} — {inc.incident_type} (sev {inc.severity}) en {inc.address}")
+                logger.info("Auto-generated: %s — %s (sev %s) at %s", inc.id, inc.incident_type, inc.severity, inc.address)
             finally:
                 db.close()
         except Exception as e:
-            print(f"❌ Error en auto-generador: {e}")
+            logger.error("Error in auto-generator: %s", e)
 
         # Intervalo variable: ±30% del base para más realismo
         jitter = random.uniform(0.7, 1.3)
@@ -202,8 +206,10 @@ def auto_generate_status():
 def generate_one(db: Session = Depends(get_db)):
     """Genera un solo incidente aleatorio (útil para pruebas manuales)."""
     data = generate_random_incident()
-    existing = db.query(IncidentSQL).count()
-    inc_id = f"INC-{existing+1:03d}"
+    max_num = db.execute(
+        text("SELECT COALESCE(MAX(CAST(SUBSTRING(id FROM 5) AS INTEGER)), 0) FROM incidents")
+    ).scalar() or 0
+    inc_id = f"INC-{max_num + 1:03d}"
 
     inc = IncidentSQL(
         id=inc_id,

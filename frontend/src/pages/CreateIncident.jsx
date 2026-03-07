@@ -101,7 +101,7 @@ export default function CreateIncident() {
           </div>
         </div>
 
-        <div className="form-section">
+        <div className="form-group">
           <label htmlFor="description">Descripción *</label>
           <textarea
             id="description"

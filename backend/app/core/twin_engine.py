@@ -15,6 +15,7 @@ import json
 import math
 import random
 import logging
+import traceback
 from datetime import datetime
 from ..config import TICK_MS
 from ..storage.db import SessionLocal
@@ -40,16 +41,124 @@ def _dist2(a_lat, a_lon, b_lat, b_lon):
     return (a_lat - b_lat) ** 2 + (a_lon - b_lon) ** 2
 
 
-def _build_direct_route(start_lat, start_lon, end_lat, end_lon, n_points=6):
-    """Direct route with linear interpolation. 6 points = minimal data, smooth movement."""
+# ── OSRM route cache (avoid repeated API calls for similar routes) ───
+_osrm_cache: dict[str, tuple] = {}
+_OSRM_CACHE_MAX = 200
+
+
+def _osrm_cache_key(lat1, lon1, lat2, lon2, precision=4):
+    """Cache key rounded to ~11m precision (4 decimals)."""
+    return f"{round(lat1,precision)},{round(lon1,precision)}-{round(lat2,precision)},{round(lon2,precision)}"
+
+
+def _osrm_route(start_lat, start_lon, end_lat, end_lon, max_points=250):
+    """Fetch real road route from OSRM public API with retry + cache.
+    Returns (list of [lat, lon], distance_km) or (None, None)."""
+    import urllib.request
+
+    # Check cache first
+    cache_key = _osrm_cache_key(start_lat, start_lon, end_lat, end_lon)
+    if cache_key in _osrm_cache:
+        return _osrm_cache[cache_key]
+
+    url = (
+        f"http://router.project-osrm.org/route/v1/driving/"
+        f"{start_lon},{start_lat};{end_lon},{end_lat}"
+        f"?overview=full&geometries=geojson"
+    )
+
+    for attempt in range(2):  # 2 attempts
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "KAIROS-CDS/1.0"})
+            timeout = 8 if attempt == 0 else 12  # OSRM from Docker takes 3-6s typically
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = json.loads(resp.read())
+
+            if data.get("code") != "Ok" or not data.get("routes"):
+                logger.warning(f"[OSRM] No route found: {data.get('message', 'unknown')}")
+                return None, None
+
+            coords = data["routes"][0]["geometry"]["coordinates"]  # [lon, lat] pairs
+            distance_m = data["routes"][0]["distance"]
+
+            # Downsample only if very large (keep detail for Madrid streets)
+            if len(coords) > max_points:
+                step = len(coords) / max_points
+                coords = [coords[int(i * step)] for i in range(max_points)] + [coords[-1]]
+
+            # Convert [lon, lat] → [lat, lon]
+            result = ([[c[1], c[0]] for c in coords], distance_m / 1000.0)
+
+            # Cache result (evict if full)
+            if len(_osrm_cache) >= _OSRM_CACHE_MAX:
+                keys = list(_osrm_cache.keys())
+                for k in keys[:len(keys) // 4]:
+                    del _osrm_cache[k]
+            _osrm_cache[cache_key] = result
+
+            logger.info(f"[OSRM] Route OK: {len(result[0])} pts, {result[1]:.1f} km")
+            return result
+
+        except Exception as e:
+            if attempt == 0:
+                logger.warning(f"[OSRM] Attempt 1 failed ({e}), retrying...")
+            else:
+                logger.warning(f"[OSRM] Both attempts failed ({e}), using fallback")
+
+    return None, None
+
+
+def _build_street_route(start_lat, start_lon, end_lat, end_lon, n_points=20):
+    """Fallback: simulate Madrid-style route with multiple turns.
+    Uses 2-3 intermediate waypoints offset from the straight line
+    to mimic real street navigation through a radial city layout."""
     pts = []
-    for i in range(n_points + 1):
-        t = i / n_points
-        pts.append([
-            start_lat + (end_lat - start_lat) * t,
-            start_lon + (end_lon - start_lon) * t,
-        ])
+    dlat = end_lat - start_lat
+    dlon = end_lon - start_lon
+
+    # Create 2-3 intermediate waypoints with lateral offsets
+    # simulating turns through Madrid's mix of radial/grid streets
+    random.seed(int((start_lat + end_lat) * 10000))  # deterministic per route
+    num_turns = 2 if abs(dlat) + abs(dlon) < 0.02 else 3  # fewer turns for short routes
+
+    waypoints = [(start_lat, start_lon)]
+    for i in range(1, num_turns + 1):
+        t = i / (num_turns + 1)
+        # Base position along straight line
+        base_lat = start_lat + dlat * t
+        base_lon = start_lon + dlon * t
+        # Perpendicular offset (simulates going around blocks)
+        perp_scale = 0.002 * (1 - abs(2 * t - 1))  # max offset at midpoint
+        offset = random.uniform(-perp_scale, perp_scale)
+        waypoints.append((
+            base_lat + offset * (-dlon / max(abs(dlon) + abs(dlat), 0.0001)),
+            base_lon + offset * (dlat / max(abs(dlon) + abs(dlat), 0.0001)),
+        ))
+    waypoints.append((end_lat, end_lon))
+
+    # Interpolate smoothly between waypoints
+    pts_per_segment = n_points // len(waypoints)
+    for i in range(len(waypoints) - 1):
+        lat1, lon1 = waypoints[i]
+        lat2, lon2 = waypoints[i + 1]
+        for j in range(pts_per_segment):
+            t = j / pts_per_segment
+            pts.append([lat1 + (lat2 - lat1) * t, lon1 + (lon2 - lon1) * t])
+    pts.append([end_lat, end_lon])
+
+    logger.info(f"[ROUTE-FALLBACK] Generated {len(pts)}-point fallback route")
     return pts
+
+
+def _build_route(start_lat, start_lon, end_lat, end_lon):
+    """Try OSRM first, fallback to street-like route. Returns (waypoints, distance_km)."""
+    pts, dist_km = _osrm_route(start_lat, start_lon, end_lat, end_lon)
+    if pts and len(pts) >= 2:
+        return pts, dist_km
+    # Fallback
+    pts = _build_street_route(start_lat, start_lon, end_lat, end_lon)
+    dist_km = _haversine_km(start_lat, start_lon, end_lat, end_lon) * 1.4  # ~40% longer for streets
+    return pts, dist_km
 
 
 # ── PCR ID counter (avoids COUNT(*) query each time) ────────────────
@@ -111,7 +220,7 @@ class TwinEngine:
 
         # Hospital load update via DB (needs real persistence)
         if inc.assigned_hospital_id:
-            hosp = db.query(Hospital).get(inc.assigned_hospital_id)
+            hosp = db.get(Hospital, inc.assigned_hospital_id)
             if hosp and hosp.current_load > 0:
                 hosp.current_load = max(0, hosp.current_load - (inc.affected_count or 1))
 
@@ -154,20 +263,27 @@ class TwinEngine:
         self.running = True
         ARRIVAL_DIST2 = 0.0003 ** 2  # ~33m arrival threshold (was 5m — too tight)
         _at_incident_ticks = {}  # incident_id → tick counter (persists across DB sessions)
-        print(f"[TWIN-ENGINE] Started (TICK_MS={TICK_MS})", flush=True)
+        logger.info("[TWIN-ENGINE] Started (TICK_MS=%d)", TICK_MS)
 
-        # On startup, resolve stale incidents to avoid CPU overload
+        # On startup, resolve ALL stale incidents and reset vehicles
         _cleanup_db = SessionLocal()
         try:
-            from app.storage.models_sql import Incident as _Inc
+            from ..storage.models_sql import IncidentSQL as _Inc, Vehicle as _Veh
             _stale = _cleanup_db.query(_Inc).filter(_Inc.status.in_(["OPEN", "ASSIGNED"])).all()
-            if len(_stale) > 10:
-                for _s in _stale[10:]:
+            if _stale:
+                for _s in _stale:
                     _s.status = "RESOLVED"
+                # Reset any non-IDLE vehicles back to IDLE
+                _stuck_vehicles = _cleanup_db.query(_Veh).filter(_Veh.status != "IDLE").all()
+                for _sv in _stuck_vehicles:
+                    _sv.status = "IDLE"
+                    _sv.speed = 0.0
+                    _sv.route_progress = 0.0
                 _cleanup_db.commit()
-                print(f"[TWIN-ENGINE] Cleaned {len(_stale) - 10} stale incidents on startup", flush=True)
+                logger.info("[TWIN-ENGINE] Cleaned %d stale incidents + %d stuck vehicles on startup",
+                            len(_stale), len(_stuck_vehicles))
         except Exception as _e:
-            print(f"[TWIN-ENGINE] Cleanup warning: {_e}", flush=True)
+            logger.warning("[TWIN-ENGINE] Cleanup warning: %s", _e)
         finally:
             _cleanup_db.close()
 
@@ -208,16 +324,15 @@ class TwinEngine:
                     best.speed = 1.0
                     best.route_progress = 0.0
 
-                    # Build direct route (6+6 = 12 points max)
-                    waypoints = _build_direct_route(best.lat, best.lon, inc.lat, inc.lon)
-                    dist_ab = _haversine_km(best.lat, best.lon, inc.lat, inc.lon)
-                    total_km = dist_ab
+                    # Build road route (OSRM → fallback to street-like)
+                    waypoints, dist_ab = _build_route(best.lat, best.lon, inc.lat, inc.lon)
+                    total_km = dist_ab or _haversine_km(best.lat, best.lon, inc.lat, inc.lon)
                     incident_idx = len(waypoints) - 1
 
                     if nearest_hosp:
-                        leg_bc = _build_direct_route(inc.lat, inc.lon, nearest_hosp.lat, nearest_hosp.lon)
+                        leg_bc, dist_bc = _build_route(inc.lat, inc.lon, nearest_hosp.lat, nearest_hosp.lon)
                         waypoints.extend(leg_bc[1:])
-                        total_km += _haversine_km(inc.lat, inc.lon, nearest_hosp.lat, nearest_hosp.lon)
+                        total_km += dist_bc or _haversine_km(inc.lat, inc.lon, nearest_hosp.lat, nearest_hosp.lon)
 
                     inc.route_data = json.dumps({
                         "geometry": waypoints,
@@ -260,21 +375,21 @@ class TwinEngine:
                             inc.route_phase = "AT_INCIDENT"
                             _at_incident_ticks[inc.id] = 0
                             v.speed = 0.0
-                            print(f"[TWIN-ENGINE] {v.id} arrived at {inc.id}", flush=True)
+                            logger.info("[TWIN-ENGINE] %s arrived at %s", v.id, inc.id)
 
                     elif phase == "AT_INCIDENT":
                         _at_incident_ticks[inc.id] = _at_incident_ticks.get(inc.id, 0) + 1
 
-                        if _at_incident_ticks[inc.id] >= 5:  # ~7.5s at 1.5s ticks
+                        if _at_incident_ticks[inc.id] >= 12:  # ~18s at 1.5s ticks (quick on-scene assessment)
                             del _at_incident_ticks[inc.id]
                             if inc.assigned_hospital_id:
                                 inc.route_phase = "TO_HOSPITAL"
                                 v.status = "EN_ROUTE"
                                 v.speed = 1.0
-                                print(f"[TWIN-ENGINE] {v.id} heading to hospital for {inc.id}", flush=True)
+                                logger.info("[TWIN-ENGINE] %s heading to hospital for %s", v.id, inc.id)
                             else:
                                 self._resolve_incident(db, inc, v, self._hospital_dict, None)
-                                print(f"[TWIN-ENGINE] {inc.id} resolved (no hospital)", flush=True)
+                                logger.info("[TWIN-ENGINE] %s resolved (no hospital)", inc.id)
 
                     elif phase == "TO_HOSPITAL":
                         arrived = v.route_progress >= 0.95
@@ -285,11 +400,11 @@ class TwinEngine:
 
                         if arrived:
                             if inc.assigned_hospital_id:
-                                hosp = db.query(Hospital).get(inc.assigned_hospital_id)
+                                hosp = db.get(Hospital, inc.assigned_hospital_id)
                                 if hosp:
                                     hosp.current_load = min(hosp.capacity, hosp.current_load + (inc.affected_count or 1))
                             self._resolve_incident(db, inc, v, self._hospital_dict, None)
-                            print(f"[TWIN-ENGINE] {inc.id} RESOLVED (hospital={inc.assigned_hospital_id})", flush=True)
+                            logger.info("[TWIN-ENGINE] %s RESOLVED (hospital=%s)", inc.id, inc.assigned_hospital_id)
 
                 db.commit()
 
@@ -347,9 +462,7 @@ class TwinEngine:
 
             except Exception as e:
                 db.rollback()
-                import traceback
-                print(f"[TWIN-ENGINE] ERROR: {e}", flush=True)
-                traceback.print_exc()
+                logger.error("[TWIN-ENGINE] ERROR: %s\n%s", e, traceback.format_exc())
                 payload = {"ts": time.time(), "vehicles": [], "incidents": [], "fleet_metrics": {}, "alerts": []}
             finally:
                 db.close()

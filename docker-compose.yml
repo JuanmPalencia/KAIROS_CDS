@@ -31,9 +31,12 @@ services:
     build: ./backend
     ports:
       - "5001:5001"
+    expose:
+      - "5001"
     env_file:
       - ./backend/.env
     environment:
+      PORT: "5001"
       DATABASE_URL: postgresql+psycopg2://twin:twin@db:5432/twin
       REDIS_HOST: redis
       REDIS_PORT: 6379

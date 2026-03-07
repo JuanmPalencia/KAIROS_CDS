@@ -65,3 +65,5 @@ cyber-claude/pcap/
 nul
 
 /.claude
+CLAUDE.md
+*.docx

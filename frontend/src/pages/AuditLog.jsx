@@ -122,6 +122,11 @@ export default function AuditLog() {
     return "#6b7280";
   };
 
+  const getExplorerUrl = (txId) => {
+    if (!txId || txId.startsWith("local_")) return null;
+    return `https://whatsonchain.com/tx/${txId}`;
+  };
+
   const getBlockchainIcon = (log) => {
     if (!log.blockchain_hash) return <Clock size={16} />;
     if (log.blockchain_tx_id && !log.blockchain_tx_id.startsWith("local_")) return <LinkIcon size={16} />;
@@ -133,7 +138,7 @@ export default function AuditLog() {
     if (!log.blockchain_hash) return "Pendiente de hash";
     if (log.blockchain_tx_id && !log.blockchain_tx_id.startsWith("local_")) return "Registrado en BSV blockchain";
     if (log.blockchain_tx_id?.startsWith("local_")) return "Registrado localmente";
-    return "Hash calculado, pendiente de registro";
+    return "Hash calculado, pendiente de próximo batch";
   };
 
   return (
@@ -330,14 +335,27 @@ export default function AuditLog() {
                     </td>
                     <td className="blockchain-cell">
                       {log.blockchain_hash ? (
-                        <button
-                          className="blockchain-badge"
-                          title={getBlockchainTooltip(log)}
-                          onClick={() => verifyHash(log.blockchain_hash)}
-                          disabled={verifyLoading}
-                        >
-                          {getBlockchainIcon(log)} Verificar
-                        </button>
+                        <div className="blockchain-cell-inner">
+                          <button
+                            className="blockchain-badge"
+                            title={getBlockchainTooltip(log)}
+                            onClick={() => verifyHash(log.blockchain_hash)}
+                            disabled={verifyLoading}
+                          >
+                            {getBlockchainIcon(log)} Verificar
+                          </button>
+                          {getExplorerUrl(log.blockchain_tx_id) && (
+                            <a
+                              className="blockchain-explorer-link"
+                              href={getExplorerUrl(log.blockchain_tx_id)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={`Ver TX en WhatsOnChain: ${log.blockchain_tx_id}`}
+                            >
+                              <LinkIcon size={13} /> WoC
+                            </a>
+                          )}
+                        </div>
                       ) : (
                         <span className="blockchain-pending" title="Sin hash"><Clock size={16} /></span>
                       )}

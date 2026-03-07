@@ -25,13 +25,13 @@ from ..storage.models_sql import Vehicle, IncidentSQL, GasStation
 _vehicle_speeds: dict[str, float] = {}        # vel. asignada por ruta
 _refueling: dict[str, int] = {}               # vid → ticks restantes
 _heading_to_gas: dict[str, str] = {}          # vid → gas_station_id (camino a repostar)
-_speed_multiplier: float = 8.0                 # 8x simulation acceleration for responsive demo
+_speed_multiplier: float = 2.0                 # 2x simulation acceleration (realistic pace)
 _route_cache: dict[str, dict] = {}            # incident_id → parsed route_data (avoid re-parsing JSON)
 
 # ── Constantes realistas ──────────────────────────────────────────────
 LOW_FUEL_PCT = 25.0          # % para decidir ir a repostar
 REFUEL_TICKS = 8             # ~12 seg a 1500ms/tick (≈5 min simulados) - OPTIMIZED
-TICK_SECONDS = 1.5           # cada tick del simulador = 1.5s real (OPTIMIZED from 0.5s)
+TICK_SECONDS = 1.5           # cada tick del simulador = 1.5s real
 
 # Consumo medio diésel (L/100km) según subtipo
 CONSUMPTION_L100KM = {
@@ -123,10 +123,14 @@ class MockSimAdapter:
                 self._step_refueling(v)
                 continue
 
-            # ② En ruta → seguir destino
+            # ② En ruta → seguir destino (skip if AT_INCIDENT — vehicle on scene)
             if v.status == "EN_ROUTE":
                 target = inc_by_vehicle.get(v.id)
                 if target:
+                    phase = getattr(target, 'route_phase', '') or ''
+                    if phase == "AT_INCIDENT":
+                        v.speed = 0.0
+                        continue
                     self._step_en_route(v, target)
                 continue
 
@@ -173,16 +177,37 @@ class MockSimAdapter:
                     progress_inc = km_per_tick / distance_km
                     v.route_progress = min(1.0, v.route_progress + progress_inc)
 
-                    # Linear interpolation on waypoints
-                    p = v.route_progress
-                    n = len(waypoints) - 1
-                    idx = min(int(p * n), n - 1)
-                    t = (p * n) - idx
+                    # Distance-based interpolation (follows streets accurately)
+                    # Pre-compute segment distances (cached in route_info)
+                    seg_dists = route_info.get("_seg_dists")
+                    total_dist = route_info.get("_total_dist")
+                    if seg_dists is None:
+                        seg_dists = []
+                        total_dist = 0.0
+                        for i in range(len(waypoints) - 1):
+                            d = _haversine_km(
+                                waypoints[i][0], waypoints[i][1],
+                                waypoints[i + 1][0], waypoints[i + 1][1],
+                            )
+                            seg_dists.append(d)
+                            total_dist += d
+                        route_info["_seg_dists"] = seg_dists
+                        route_info["_total_dist"] = total_dist or 1.0
+                        total_dist = total_dist or 1.0
 
-                    pt1 = waypoints[idx]
-                    pt2 = waypoints[idx + 1]
-                    v.lat = pt1[0] + (pt2[0] - pt1[0]) * t
-                    v.lon = pt1[1] + (pt2[1] - pt1[1]) * t
+                    dist_target = v.route_progress * total_dist
+                    accum = 0.0
+                    for i, sd in enumerate(seg_dists):
+                        if accum + sd >= dist_target:
+                            t = (dist_target - accum) / sd if sd > 0 else 0.0
+                            v.lat = waypoints[i][0] + (waypoints[i + 1][0] - waypoints[i][0]) * t
+                            v.lon = waypoints[i][1] + (waypoints[i + 1][1] - waypoints[i][1]) * t
+                            break
+                        accum += sd
+                    else:
+                        v.lat = waypoints[-1][0]
+                        v.lon = waypoints[-1][1]
+
                     v.speed = _vehicle_speeds[v.id]  # Display base speed (not multiplied)
                     _consume_fuel_driving(v, km_per_tick)
                     return

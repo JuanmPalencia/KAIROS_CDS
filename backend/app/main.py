@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from starlette.websockets import WebSocketDisconnect
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from .storage.db import engine, Base, get_db
+from .storage.db import engine, Base, get_db, SessionLocal
 from .realtime.ws import WSManager
 from .core.twin_engine import TwinEngine
 from .api.health import router as health_router
@@ -43,6 +43,34 @@ from .core.metrics import (
 
 logger = logging.getLogger(__name__)
 
+# Blockchain batch interval (env var BLOCKCHAIN_BATCH_INTERVAL_MIN, default 30)
+_BATCH_INTERVAL_SEC = int(os.getenv("BLOCKCHAIN_BATCH_INTERVAL_MIN", "30")) * 60
+
+
+async def _blockchain_batch_scheduler():
+    """Ejecuta create_and_broadcast_batch cada BLOCKCHAIN_BATCH_INTERVAL_MIN minutos."""
+    logger.info("[BLOCKCHAIN] Batch scheduler started (interval=%ds)", _BATCH_INTERVAL_SEC)
+    while True:
+        await asyncio.sleep(_BATCH_INTERVAL_SEC)
+        db = SessionLocal()
+        try:
+            from .blockchain.batch_notarizer import create_and_broadcast_batch
+            result = create_and_broadcast_batch(db)
+            status = result.get("status", "?")
+            if status == "on_chain":
+                logger.info(
+                    "[BLOCKCHAIN] Auto-batch OK: %d logs → tx %s",
+                    result.get("leaf_count", 0), result.get("tx_id", "")[:16],
+                )
+            elif status == "empty":
+                logger.debug("[BLOCKCHAIN] Auto-batch: no pending logs")
+            else:
+                logger.warning("[BLOCKCHAIN] Auto-batch result: %s", result)
+        except Exception as e:
+            logger.error("[BLOCKCHAIN] Auto-batch error: %s", e)
+        finally:
+            db.close()
+
 
 # Lifespan context manager
 @asynccontextmanager
@@ -58,13 +86,18 @@ async def lifespan(app: FastAPI):
     # Start twin engine
     engine_task = asyncio.create_task(twin_engine.run())
     logger.info("✅ TwinEngine started")
-    
+
+    # Start blockchain batch scheduler
+    batch_task = asyncio.create_task(_blockchain_batch_scheduler())
+    logger.info("✅ Blockchain batch scheduler started (%d min interval)", _BATCH_INTERVAL_SEC // 60)
+
     yield
-    
+
     # Shutdown
     logger.info("🛑 Shutting down...")
     twin_engine.running = False
     engine_task.cancel()
+    batch_task.cancel()
     database_connections_active.set(0)
     logger.info("✅ Shutdown complete")
 
@@ -115,8 +148,7 @@ _cors_origins = [
     "http://127.0.0.1:3000",
 ]
 # Add origins from CORS_ORIGINS env var (comma-separated)
-import os as _os
-_extra = _os.getenv("CORS_ORIGINS", "")
+_extra = os.getenv("CORS_ORIGINS", "")
 if _extra:
     _cors_origins.extend([o.strip() for o in _extra.split(",") if o.strip()])
 logger.info(f"CORS allowed origins: {_cors_origins}")
@@ -232,6 +264,7 @@ def get_live_data(city: str = None, db: Session = Depends(get_db)):
                     "tank_capacity": getattr(v, "tank_capacity", 80.0),
                     "trust_score": v.trust_score,
                     "enabled": v.enabled,
+                    "route_progress": v.route_progress,
                 }
                 for v in vehicles
             ],

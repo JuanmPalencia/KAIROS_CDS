@@ -238,6 +238,33 @@
   cursor: wait;
 }
 
+.blockchain-cell-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.blockchain-explorer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  border: 1.5px solid #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.blockchain-explorer-link:hover {
+  background: rgba(16, 185, 129, 0.18);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+}
+
 .blockchain-pending {
   font-size: 1rem;
   opacity: 0.5;

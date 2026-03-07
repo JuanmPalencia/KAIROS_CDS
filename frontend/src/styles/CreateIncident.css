@@ -107,7 +107,8 @@
 }
 
 .form-group input:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
   outline: none;
   border-color: #667eea;
 }
@@ -127,7 +128,13 @@
 .form-row {
   display: flex;
   gap: 1rem;
+  align-items: flex-end;
   margin-bottom: 1.5rem;
+}
+
+/* Inside a row, the row itself handles bottom spacing */
+.form-row .form-group {
+  margin-bottom: 0;
 }
 
 .location-btn {
@@ -154,40 +161,43 @@
   border-top: 1px solid var(--border-color, #e0e0e0);
 }
 
-.btn-primary,
-.btn-secondary {
+.form-actions .btn-primary,
+.form-actions .btn-secondary {
+  flex: 1;
+  width: auto;
   padding: 0.875rem 1.5rem;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  border: none;
-  flex: 1;
+  box-sizing: border-box;
+  margin-top: 0;
 }
 
-.btn-primary {
+.form-actions .btn-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  border: none;
 }
 
-.btn-primary:hover:not(:disabled) {
+.form-actions .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
 }
 
-.btn-primary:disabled {
+.form-actions .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-secondary {
+.form-actions .btn-secondary {
   background: var(--bg-card, white);
   color: var(--text-secondary, #666);
   border: 2px solid var(--border-color, #e0e0e0);
 }
 
-.btn-secondary:hover {
+.form-actions .btn-secondary:hover {
   border-color: #667eea;
   color: #667eea;
 }
@@ -197,7 +207,7 @@
   .create-incident-page { padding: 1rem; }
   .page-header h1 { font-size: 1.5rem; }
   .type-grid { grid-template-columns: repeat(2, 1fr); }
-  .form-row { flex-direction: column; gap: 0; }
+  .form-row { flex-direction: column; gap: 0; align-items: stretch; }
   .incident-form { padding: 1.25rem; }
 }
 
@@ -207,6 +217,6 @@
   .type-btn { flex-direction: row; padding: 0.75rem; }
   .type-emoji { font-size: 1.5rem; }
   .form-actions { flex-direction: column; }
-  .btn-primary, .btn-secondary { width: 100%; }
+  .form-actions .btn-primary, .form-actions .btn-secondary { width: 100%; }
   .incident-form { padding: 1rem; }
 }
