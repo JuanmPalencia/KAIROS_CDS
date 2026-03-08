@@ -77,7 +77,7 @@ export default function AuditLog() {
         const data = await batchesRes.json();
         if (data.batches?.length > 0) setLastBatchAt(new Date(data.batches[0].created_at));
       }
-    } catch (_) {}
+    } catch { /* swallow */ }
   }, [token]);
 
   useEffect(() => {
@@ -122,7 +122,7 @@ export default function AuditLog() {
       setLastBatchAt(new Date());
       fetchBlockchainStatus();
       fetchLogs();
-    } catch (err) {
+    } catch {
       setBatchResult({ status: "error", message: "Error de conexión" });
     } finally {
       setBatchLoading(false);

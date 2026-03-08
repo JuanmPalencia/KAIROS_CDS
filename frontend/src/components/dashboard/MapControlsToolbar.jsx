@@ -28,14 +28,14 @@ function MapControlsToolbar({
 
   return (
     <div className="map-controls">
-      {buttons.map(({ state, setter, Icon, label, title }) => (
+      {buttons.map((btn) => (
         <button
-          key={label}
-          className={`map-control-btn ${state ? "active" : ""}`}
-          onClick={() => toggle(setter)}
-          title={title}
+          key={btn.label}
+          className={`map-control-btn ${btn.state ? "active" : ""}`}
+          onClick={() => toggle(btn.setter)}
+          title={btn.title}
         >
-          <Icon size={16} /> {label}
+          <btn.Icon size={16} /> {btn.label}
         </button>
       ))}
     </div>

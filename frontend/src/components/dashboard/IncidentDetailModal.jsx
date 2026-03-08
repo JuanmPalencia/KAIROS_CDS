@@ -4,7 +4,7 @@ import { ClipboardList, ScrollText, Bot, Ambulance, Hospital, CheckCircle, Penci
 function IncidentDetailModal({
   selectedIncident, onClose,
   incidentTimeline, fetchTimeline,
-  aiSuggestion, setAiSuggestion, loadingSuggestion, getAISuggestion,
+  aiSuggestion, loadingSuggestion, getAISuggestion,
   overrideMode, setOverrideMode,
   overrideVehicle, setOverrideVehicle,
   overrideHospital, setOverrideHospital,

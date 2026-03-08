@@ -13,11 +13,11 @@ function MetricCards({ fleetMetrics, openIncidents, hospitals, gasStations, deaL
 
   return (
     <div className="metrics-cards">
-      {cards.map(({ Icon, value, label }) => (
-        <div key={label} className="metric-card">
-          <div className="metric-icon"><Icon size={24} className="icon-3d" /></div>
-          <div className="metric-value">{value}</div>
-          <div className="metric-label">{label}</div>
+      {cards.map((card) => (
+        <div key={card.label} className="metric-card">
+          <div className="metric-icon"><card.Icon size={24} className="icon-3d" /></div>
+          <div className="metric-value">{card.value}</div>
+          <div className="metric-label">{card.label}</div>
         </div>
       ))}
     </div>

@@ -206,9 +206,9 @@ def auto_generate_status():
 def generate_one(db: Session = Depends(get_db)):
     """Genera un solo incidente aleatorio (útil para pruebas manuales)."""
     data = generate_random_incident()
-    max_num = db.execute(
-        text("SELECT COALESCE(MAX(CAST(SUBSTRING(id FROM 5) AS INTEGER)), 0) FROM incidents")
-    ).scalar() or 0
+    rows = db.execute(text("SELECT id FROM incidents")).fetchall()
+    nums = [int(r[0][4:]) for r in rows if len(r[0]) > 4 and r[0][4:].isdigit()]
+    max_num = max(nums, default=0)
     inc_id = f"INC-{max_num + 1:03d}"
 
     inc = IncidentSQL(
