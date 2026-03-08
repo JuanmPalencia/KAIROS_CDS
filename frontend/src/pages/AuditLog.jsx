@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import {
   Key, LogOut as LogOutIcon, AlertTriangle, ClipboardList, CheckCircle,
   UserPlus, Pencil, Trash2, FileEdit, Clock, Link as LinkIcon, Link2,
   HardDrive, ScrollText, FileText, Search, Calendar, Filter,
+  Upload, RefreshCw, Database, Layers,
 } from "lucide-react";
 import "../styles/AuditLog.css";
 import { API_BASE } from "../config";
@@ -21,6 +22,14 @@ export default function AuditLog() {
   const [filterDateTo, setFilterDateTo] = useState("");
   const [verifyResult, setVerifyResult] = useState(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [blockchainStatus, setBlockchainStatus] = useState(null);
+  const [lastBatchAt, setLastBatchAt] = useState(null);
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [batchResult, setBatchResult] = useState(null);
+  const [countdown, setCountdown] = useState(null);
+  const countdownRef = useRef(null);
+
+  const BATCH_INTERVAL_MS = 30 * 60 * 1000; // 30 min
 
   const pageSize = 25;
 
@@ -56,6 +65,69 @@ export default function AuditLog() {
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
+
+  const fetchBlockchainStatus = useCallback(async () => {
+    try {
+      const [statusRes, batchesRes] = await Promise.all([
+        fetch(`${API_BASE}/api/blockchain/status`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/api/blockchain/merkle/batches?limit=1`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      if (statusRes.ok) setBlockchainStatus(await statusRes.json());
+      if (batchesRes.ok) {
+        const data = await batchesRes.json();
+        if (data.batches?.length > 0) setLastBatchAt(new Date(data.batches[0].created_at));
+      }
+    } catch (_) {}
+  }, [token]);
+
+  useEffect(() => {
+    fetchBlockchainStatus();
+    const interval = setInterval(fetchBlockchainStatus, 30000);
+    return () => clearInterval(interval);
+  }, [fetchBlockchainStatus]);
+
+  // Countdown hasta próximo batch automático
+  useEffect(() => {
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    const base = lastBatchAt ? lastBatchAt.getTime() : Date.now();
+    const nextAt = base + BATCH_INTERVAL_MS;
+    const tick = () => {
+      const left = nextAt - Date.now();
+      setCountdown(left > 0 ? left : 0);
+    };
+    tick();
+    countdownRef.current = setInterval(tick, 1000);
+    return () => clearInterval(countdownRef.current);
+  }, [lastBatchAt]);
+
+  const formatCountdown = (ms) => {
+    if (ms === null) return "--:--";
+    if (ms <= 0) return "inminente";
+    const m = Math.floor(ms / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
+
+  const forceBatch = async () => {
+    if (batchLoading) return;
+    setBatchLoading(true);
+    setBatchResult(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/blockchain/merkle/batch-and-broadcast`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setBatchResult(data);
+      setLastBatchAt(new Date());
+      fetchBlockchainStatus();
+      fetchLogs();
+    } catch (err) {
+      setBatchResult({ status: "error", message: "Error de conexión" });
+    } finally {
+      setBatchLoading(false);
+    }
+  };
 
   const exportCSV = async () => {
     try {
@@ -151,6 +223,60 @@ export default function AuditLog() {
         <button className="export-btn" onClick={exportCSV}>
                     <FileText size={16} style={{verticalAlign:'middle',marginRight:4}} /> Exportar CSV
         </button>
+      </div>
+
+      {/* Blockchain Status Bar */}
+      <div className="blockchain-status-bar">
+        <div className="bsb-stats">
+          <div className="bsb-stat">
+            <Layers size={15} />
+            <span className="bsb-label">Pendientes</span>
+            <span className={`bsb-value ${blockchainStatus?.pending_unbatched > 0 ? "bsb-pending" : "bsb-zero"}`}>
+              {blockchainStatus?.pending_unbatched ?? "—"}
+            </span>
+          </div>
+          <div className="bsb-divider" />
+          <div className="bsb-stat">
+            <Database size={15} />
+            <span className="bsb-label">En blockchain</span>
+            <span className="bsb-value bsb-ok">{blockchainStatus?.on_chain ?? "—"}</span>
+          </div>
+          <div className="bsb-divider" />
+          <div className="bsb-stat">
+            <LinkIcon size={15} />
+            <span className="bsb-label">Cobertura</span>
+            <span className="bsb-value">{blockchainStatus?.coverage_pct != null ? `${blockchainStatus.coverage_pct}%` : "—"}</span>
+          </div>
+          <div className="bsb-divider" />
+          <div className="bsb-stat">
+            <Clock size={15} />
+            <span className="bsb-label">Próximo batch automático</span>
+            <span className={`bsb-value bsb-countdown ${countdown === 0 ? "bsb-pending" : ""}`}>
+              {formatCountdown(countdown)}
+            </span>
+          </div>
+        </div>
+        <div className="bsb-actions">
+          {batchResult && (
+            <span className={`bsb-result ${batchResult.status === "on_chain" ? "bsb-result-ok" : batchResult.status === "empty" ? "bsb-result-empty" : "bsb-result-err"}`}>
+              {batchResult.status === "on_chain" && `Subido: ${batchResult.leaf_count} logs — TX ${batchResult.tx_id?.slice(0, 12)}...`}
+              {batchResult.status === "empty" && "Sin registros pendientes"}
+              {batchResult.status === "error" && `Error: ${batchResult.message}`}
+              {!["on_chain","empty","error"].includes(batchResult.status) && JSON.stringify(batchResult.status)}
+            </span>
+          )}
+          <button
+            className="bsb-force-btn"
+            onClick={forceBatch}
+            disabled={batchLoading || blockchainStatus?.pending_unbatched === 0}
+            title={blockchainStatus?.pending_unbatched === 0 ? "No hay registros pendientes de subir" : "Forzar subida ahora"}
+          >
+            {batchLoading
+              ? <><RefreshCw size={14} className="spin" /> Subiendo...</>
+              : <><Upload size={14} /> Forzar subida</>
+            }
+          </button>
+        </div>
       </div>
 
       <div className="audit-filters">

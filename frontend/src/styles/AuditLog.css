@@ -37,6 +37,119 @@
   background: #059669;
 }
 
+/* ── Blockchain Status Bar ── */
+.blockchain-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 18px;
+  background: var(--bg-card, #fff);
+  border-radius: 12px;
+  border: 1.5px solid rgba(102, 126, 234, 0.2);
+  box-shadow: 0 2px 8px var(--shadow-color, rgba(0,0,0,0.05));
+  margin-bottom: 1rem;
+}
+
+.bsb-stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+}
+
+.bsb-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  color: #64748b;
+}
+
+.bsb-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border-color, #e0e0e0);
+}
+
+.bsb-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #64748b;
+}
+
+.bsb-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary, #333);
+}
+
+.bsb-pending { color: #f59e0b; }
+.bsb-zero    { color: #10b981; }
+.bsb-ok      { color: #10b981; }
+
+.bsb-countdown {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #667eea;
+}
+
+.bsb-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.bsb-result {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.bsb-result-ok    { background: rgba(16,185,129,0.1); color: #10b981; }
+.bsb-result-empty { background: rgba(100,116,139,0.1); color: #64748b; }
+.bsb-result-err   { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+.bsb-force-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.bsb-force-btn:hover:not(:disabled) {
+  background: #4f46e5;
+  box-shadow: 0 2px 8px rgba(102,126,234,0.4);
+}
+
+.bsb-force-btn:disabled {
+  background: var(--border-color, #ccc);
+  color: #999;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 .audit-filters {
   display: flex;
   flex-direction: column;

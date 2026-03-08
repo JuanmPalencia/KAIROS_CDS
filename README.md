@@ -23,6 +23,12 @@
   powered by <strong>10 local AI modules</strong>, <strong>OSRM street routing</strong>, <strong>blockchain auditing</strong>, and <strong>enterprise-grade security</strong>.
 </p>
 
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=_HiGhmS0Gmo" target="_blank">
+    <img src="https://img.shields.io/badge/▶%20Demo%20Video-YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Demo Video" />
+  </a>
+</p>
+
 ---
 
 ## Overview
