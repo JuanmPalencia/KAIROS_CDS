@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import { BarChart3, Gauge, Ambulance, TrendingUp, Fuel, Zap, Star, Clock } from "lucide-react";
 
 const SCOLORS = { SVB: "#22c55e", SVA: "#ef4444", VIR: "#3b82f6", VAMM: "#f97316", SAMU: "#a855f7" };
@@ -21,7 +21,8 @@ function OpsResumePanel({ vehicles, openIncidents, assignedIncidents, incidents 
   const subtypeCounts = {};
   enabled.forEach(v => { const s = v.subtype || "SVB"; subtypeCounts[s] = (subtypeCounts[s] || 0) + 1; });
 
-  const nowMs = useMemo(() => Date.now(), [openIncidents, assignedIncidents]);
+  // eslint-disable-next-line react-hooks/purity
+  const nowMs = Date.now();
   const sevBuckets = { 1: [], 2: [], 3: [], 4: [], 5: [] };
   [...openIncidents, ...assignedIncidents].forEach(inc => {
     const sev = inc.severity || 1;
